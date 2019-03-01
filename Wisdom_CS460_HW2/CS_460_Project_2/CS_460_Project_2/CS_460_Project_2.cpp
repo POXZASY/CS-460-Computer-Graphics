@@ -53,7 +53,10 @@ void createMenu() {
 
 void mouseHandler(int button, int state, int x, int y) {
 	if (button == GLUT_LEFT_BUTTON && state == GLUT_DOWN) {
-		if (!currentlyDrawing) polygonPoints.clear();
+		if (!currentlyDrawing) {
+			polygonPoints.clear();
+			closePoly = false;
+		}
 		currentlyDrawing = true;
 		polygonPoints.push_back(glutToGLCoords(x, y));
 	}
@@ -85,7 +88,6 @@ void display() {
 	}
 	if (closePoly) {
 		glVertex2f(get<0>(polygonPoints.front()), get<1>(polygonPoints.front()));
-		closePoly = false;
 	}
 	glEnd();
 
