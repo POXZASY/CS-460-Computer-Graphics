@@ -1,5 +1,6 @@
 ﻿  CS_460_Project_2.cpp
-c:\users\larkin\documents\cs_460\wisdom_cs460_hw2\cs_460_project_2\cs_460_project_2\cs_460_project_2.cpp(45): warning C4018: '<': signed/unsigned mismatch
-c:\users\larkin\documents\cs_460\wisdom_cs460_hw2\cs_460_project_2\cs_460_project_2\cs_460_project_2.cpp(77): warning C4018: '<': signed/unsigned mismatch
-c:\users\larkin\documents\cs_460\wisdom_cs460_hw2\cs_460_project_2\cs_460_project_2\cs_460_project_2.cpp(140): warning C4018: '<': signed/unsigned mismatch
+c:\users\larkin\documents\cs_460\wisdom_cs460_hw2\cs_460_project_2\cs_460_project_2\cs_460_project_2.cpp(47): warning C4018: '<': signed/unsigned mismatch
+c:\users\larkin\documents\cs_460\wisdom_cs460_hw2\cs_460_project_2\cs_460_project_2\cs_460_project_2.cpp(79): warning C4018: '<': signed/unsigned mismatch
+c:\users\larkin\documents\cs_460\wisdom_cs460_hw2\cs_460_project_2\cs_460_project_2\cs_460_project_2.cpp(101): warning C4018: '<': signed/unsigned mismatch
+c:\users\larkin\documents\cs_460\wisdom_cs460_hw2\cs_460_project_2\cs_460_project_2\cs_460_project_2.cpp(224): warning C4018: '<': signed/unsigned mismatch
   CS_460_Project_2.vcxproj -> C:\Users\Larkin\Documents\CS_460\Wisdom_CS460_HW2\CS_460_Project_2\Debug\CS_460_Project_2.exe

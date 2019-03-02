@@ -15,6 +15,7 @@ float green = 1.0;
 float blue = 0.5;
 vector<tuple<int, int>> polygon;
 vector<tuple<float, float>> polygonPointsOpenGL;
+bool currentlyFilling = false;
 vector<tuple<int, int>> fillPoints;
 vector<tuple<int, int>> clipper = {make_tuple(125, 125), make_tuple(125, 375), make_tuple(375, 375), make_tuple(375, 125)};
 bool currentlyDrawing = false;
@@ -82,8 +83,19 @@ vector<tuple<int, int>> shAlgo(vector<tuple<int, int>> polygonPoints, vector<tup
 	return polygonPoints;
 }
 
+//function to check if vector contains a point
+bool contains(vector<tuple<int, int>> vec, tuple<int,int> pt) {
+	for (tuple<int, int> t : vec) {
+		if (t == pt) return true;
+	}
+	return false;
+}
+
 //Scanline Fill Algorithm
 vector<tuple<int, int>> scanLineFill(vector<tuple<int, int>> polygonPoints) {
+	vector<tuple<int, int>> retVal;
+	int maxy = INT_MIN;
+	int miny = INT_MAX;
 	//find all points intersected by polygon
 	vector<tuple<int, int>> intersectPoints;
 	for (int i = 0; i < polygonPoints.size(); i++) { //iterate through each of the sides of the polygon
@@ -92,12 +104,54 @@ vector<tuple<int, int>> scanLineFill(vector<tuple<int, int>> polygonPoints) {
 		int p1x = get<0>(p1);
 		int p1y = get<1>(p1);
 		int p2x = get<0>(p2);
-		int p2y = get<0>(p2);
-		float m = (float)(p2y - p1y) / (p2x - p1x); //slope of the line
-		for (int j = min(p1x, p2x); j <= max(p1x, p2x); j++) { //iterate through all of the x values between the two points
-			intersectPoints.push_back(make_tuple(j, ))
+		int p2y = get<1>(p2);
+		//store max/min y for later
+		if (p1y > maxy) maxy = p1y;
+		if (p2y > maxy) maxy = p2y;
+		if (p1y < miny) miny = p1y;
+		if (p2y < miny) miny = p2y;
+		//slope of the line
+	//if slope is infinite
+		if (p2x - p1x == 0) {
+			for (int j = min(p1y, p2y); j <= max(p1y, p2y); j++) {
+				intersectPoints.push_back(make_tuple(p1x, j));
+			}
+		}
+		//normal slope
+		else {
+			float m = (float)(p2y - p1y) / (p2x - p1x);
+			//iterate through all of the x values between the two points
+			for (int j = min(p1x, p2x); j <= max(p1x, p2x); j++) {
+				intersectPoints.push_back(make_tuple(j, round(m*(j - p1x) + p1y)));
+			}
 		}
 	}
+	cout << "---------------------------------------" << endl;
+	cout << "Boundary Points: " << endl;
+	for (tuple<int, int> t : intersectPoints) {
+		cout << get<0>(t) << ", " << get<1>(t) << endl;
+	}
+	cout << "---------------------------------------" << endl;
+	//apply algorithm
+	for (int y = miny; y <= maxy; y++) { //iterate through the y values
+		int parity = 0;
+		bool lastpointnotboundary = true;
+		for (int x = 0; x <= screenx; x++) {
+			if (contains(intersectPoints, make_tuple(x, y)) && lastpointnotboundary) { //if we found a boundary point, and the previous point wasn't a boundary point
+				parity = (parity + 1) % 2;
+				lastpointnotboundary = false;
+			}
+			if (parity == 1 && !contains(intersectPoints, make_tuple(x, y))) { //if we are filling and the point is not a boundary
+				retVal.push_back(make_tuple(x, y));
+				lastpointnotboundary = true;
+			}
+			else if (parity == 0 && !contains(intersectPoints, make_tuple(x, y))) {
+				lastpointnotboundary = true;
+			}
+		}
+	}
+	cout << "Total Points: " << retVal.size() << endl;
+	return retVal;
 }
 
 void processMenu(int option) {
@@ -109,6 +163,16 @@ void processMenu(int option) {
 		break;
 	//Region Filling
 	case 2:
+		if (currentlyFilling) {
+			currentlyFilling = false;
+			fillPoints.clear();
+		}
+		else if (!currentlyFilling && closePoly) {
+			currentlyFilling = true;
+			cout << "got here 0" << endl;
+			fillPoints = scanLineFill(polygon);
+			cout << "got here 3" << endl;
+		}
 		break;
 	//Window-to-Viewport Mapping
 	case 3:
@@ -130,6 +194,7 @@ void mouseHandler(int button, int state, int x, int y) {
 		if (!currentlyDrawing) {
 			polygon.clear();
 			closePoly = false;
+			currentlyFilling = false;
 		}
 		currentlyDrawing = true;
 		polygon.push_back(make_tuple(x, y));
@@ -173,6 +238,19 @@ void display() {
 		glVertex2f(get<0>(polygonPointsOpenGL.front()), get<1>(polygonPointsOpenGL.front()));
 	}
 	glEnd();
+
+	//filling the polygon
+	if (currentlyFilling) {
+		glBegin(GL_POINTS);
+		glColor3f(1.0, 0.0, 0.0);
+		for (tuple<int, int> t : fillPoints) {
+			float x = get<0>(glutToGLCoords(get<0>(t), get<1>(t)));
+			float y = get<1>(glutToGLCoords(get<0>(t), get<1>(t)));
+			glVertex2f(x, y);
+		}
+		glEnd();
+	}
+	glColor3f(0.0, 0.0, 0.0);
 
 	//dashed lines
 	glLineStipple(1, 0xFF00);
