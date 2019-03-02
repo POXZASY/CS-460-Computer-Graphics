@@ -13,7 +13,8 @@ int screeny = 500;
 float red = 0.0;
 float green = 0.0;
 float blue = 0.0;
-vector<tuple<float, float>> polygonPoints;
+vector<tuple<int, int>> polygonPoints;
+vector<tuple<float, float>> polygonPointsOpenGL;
 bool currentlyDrawing = false;
 bool closePoly = false;
 
@@ -59,7 +60,7 @@ void mouseHandler(int button, int state, int x, int y) {
 			closePoly = false;
 		}
 		currentlyDrawing = true;
-		polygonPoints.push_back(glutToGLCoords(x, y));
+		polygonPoints.push_back(make_tuple(x, y));
 	}
 }
 
@@ -100,7 +101,31 @@ void clipToEdge(vector<tuple<int, int>> polygonPoints, int clipx_1, int clipy_1,
 
 		//finding location of points with respect to the line (inside or outside)
 		int pos1 = (clipx_2 - clipx_1) * (y_1 - clipy_1) - (clipy_2 - clipy_1) * (x_1 - clipx_1);
-		int pos2 = (clipx_2 - clipx_1) * (y_2 - clipy_1) - (clipy_2 - clipy_1)
+		int pos2 = (clipx_2 - clipx_1) * (y_2 - clipy_1) - (clipy_2 - clipy_1) * (x_2 - clipx_1);
+		//both inside
+		if (pos1 < 0 && pos2 < 0) {
+			//add second point
+			newPoly.push_back(make_tuple(x_2, y_2));
+		}
+		//going from outside to inside
+		else if (pos1 >= 0 && pos2 < 0) {
+			//add intersection point and inside point
+			newPoly.push_back(make_tuple(xintercept(clipx_1, clipy_1, clipx_2, clipy_2, x_1, y_1, x_2, y_2), yintercept(clipx_1, clipy_1, clipx_2, clipy_2, x_1, y_1, x_2, y_2)));
+			newPoly.push_back(make_tuple(x_2, y_2));
+		}
+		//first point inside, second point outside
+		else if (pos1 < 0 && pos2 >= 0) {
+			newPoly.push_back(make_tuple(xintercept(clipx_1, clipy_1, clipx_2, clipy_2, x_1, y_1, x_2, y_2), yintercept(clipx_1, clipy_1, clipx_2, clipy_2, x_1, y_1, x_2, y_2)));
+		}
+	}
+	polygonPoints = newPoly;
+}
+
+//Sutherland-Hodgman Algorithm
+void shAlgo(vector<tuple<int, int>> polygonPoints, vector<tuple<int, int>> clipperPoints) {
+	for (int i = 0; i < clipperPoints.size(); i++) {
+		int j = (i + 1) % clipperPoints.size();
+		clipToEdge(polygonPoints, get<0>(clipperPoints[i]), get<1>(clipperPoints[i]), get<0>(clipperPoints[j]), get<1>(clipperPoints[j]));
 	}
 }
 
@@ -112,7 +137,12 @@ void display() {
 	//drawing the polygon
 	glBegin(GL_LINES);
 	bool first = true;
-	for (tuple<float, float> t : polygonPoints) {
+	//change poly points to gl coords
+	polygonPointsOpenGL.clear();
+	for (int i = 0; i < polygonPoints.size(); i++) {
+		polygonPointsOpenGL.push_back(glutToGLCoords(get<0>(polygonPoints[i]), get<1>(polygonPoints[i])));
+	}
+	for (tuple<float, float> t : polygonPointsOpenGL) {
 		if (first) {
 			glVertex2f(get<0>(t), get<1>(t));
 			first = false;
@@ -123,7 +153,7 @@ void display() {
 		}
 	}
 	if (closePoly) {
-		glVertex2f(get<0>(polygonPoints.front()), get<1>(polygonPoints.front()));
+		glVertex2f(get<0>(polygonPointsOpenGL.front()), get<1>(polygonPointsOpenGL.front()));
 	}
 	glEnd();
 
