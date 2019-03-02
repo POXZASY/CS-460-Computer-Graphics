@@ -4,6 +4,7 @@
 #include <vector>
 #include <tuple>
 #include <iostream>
+#include <math.h>
 
 using namespace std;
 
@@ -60,11 +61,46 @@ void mouseHandler(int button, int state, int x, int y) {
 		currentlyDrawing = true;
 		polygonPoints.push_back(glutToGLCoords(x, y));
 	}
-	if (button == GLUT_MIDDLE_BUTTON && state == GLUT_DOWN) {
+}
+
+void keyBoard(unsigned char key, int x, int y) {
+	if (key == 'p' || key == 'P') {
 		if (currentlyDrawing) {
 			currentlyDrawing = false;
 			closePoly = true;
 		}
+	}
+}
+
+
+//returns x-intercept between two lines, uses glut coords
+int xintercept(int x_1, int y_1, int x_2, int y_2, int x_3, int y_3, int x_4, int y_4) {
+	int numerator = (x_1 * y_2 - y_1 * x_2) * (x_3 - x_4) - (x_1 - x_2) * (x_3 * y_4 - y_3 * x_4);
+	int denominator = (x_1 - x_2) * (y_3 - y_4) - (y_1 - y_2) * (x_3 - x_4);
+	return round(numerator / denominator);
+}
+
+//returns y-intercept between two lines, uses glut coords
+int yintercept(int x_1, int y_1, int x_2, int y_2, int x_3, int y_3, int x_4, int y_4) {
+	int numerator = (x_1*y_2 - y_1 * x_2) * (y_3 - y_4) - (y_1 - y_2) * (x_3*y_4 - y_3 * x_4);
+	int denominator = (x_1 - x_2) * (y_3 - y_4) - (y_1 - y_2) * (x_3 - x_4);
+	return round(numerator / denominator);
+}
+
+//performs one clip of the Sutherland-Hodgman algorithm
+void clipToEdge(vector<tuple<int, int>> polygonPoints, int clipx_1, int clipy_1, int clipx_2, int clipy_2) {
+	vector<tuple<int, int>> newPoly;
+	for (int i = 0; i < polygonPoints.size(); i++) {
+		int j = (i + 1) % polygonPoints.size();
+		//points of the polygon line
+		int x_1 = get<0>(polygonPoints[i]);
+		int y_1 = get<1>(polygonPoints[i]);
+		int x_2 = get<0>(polygonPoints[j]);
+		int y_2 = get<1>(polygonPoints[j]);
+
+		//finding location of points with respect to the line (inside or outside)
+		int pos1 = (clipx_2 - clipx_1) * (y_1 - clipy_1) - (clipy_2 - clipy_1) * (x_1 - clipx_1);
+		int pos2 = (clipx_2 - clipx_1) * (y_2 - clipy_1) - (clipy_2 - clipy_1)
 	}
 }
 
@@ -120,6 +156,7 @@ int main(int argc, char** argv) {
 	glutInitWindowPosition(50, 50);
 	glutDisplayFunc(display);
 	glutMouseFunc(mouseHandler);
+	glutKeyboardFunc(keyBoard);
 	glutMainLoop();
 	return 0;
 }
