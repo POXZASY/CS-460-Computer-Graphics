@@ -11,10 +11,12 @@ using namespace std;
 int screenx = 500;
 int screeny = 500;
 float red = 0.0;
-float green = 0.0;
-float blue = 0.0;
-vector<tuple<int, int>> polygonPoints;
+float green = 1.0;
+float blue = 0.5;
+vector<tuple<int, int>> polygon;
 vector<tuple<float, float>> polygonPointsOpenGL;
+vector<tuple<int, int>> fillPoints;
+vector<tuple<int, int>> clipper = {make_tuple(125, 125), make_tuple(125, 375), make_tuple(375, 375), make_tuple(375, 125)};
 bool currentlyDrawing = false;
 bool closePoly = false;
 
@@ -23,56 +25,6 @@ tuple<float, float> glutToGLCoords(int x, int y) {
 	float GLy = -1 * (((float)y) / (screeny / 2) - 1);
 	return make_tuple(GLx, GLy);
 }
-
-void processMenu(int option) {
-	switch (option) {
-	case 1:
-		red = 1.0;
-		blue = 0.0;
-		green = 0.0;
-		break;
-	case 2:
-		red = 0.0;
-		blue = 1.0;
-		green = 0.0;
-		break;
-	case 3:
-		red = 0.0;
-		blue = 0.0;
-		green = 1.0;
-		break;
-	}
-}
-
-void createMenu() {
-	int menu;
-	menu = glutCreateMenu(processMenu);
-	glutAddMenuEntry("Polygon Clipping", 1);
-	glutAddMenuEntry("Region Filling", 2);
-	glutAddMenuEntry("Window-to-Viewport Mapping", 3);
-	glutAttachMenu(GLUT_RIGHT_BUTTON);
-}
-
-void mouseHandler(int button, int state, int x, int y) {
-	if (button == GLUT_LEFT_BUTTON && state == GLUT_DOWN) {
-		if (!currentlyDrawing) {
-			polygonPoints.clear();
-			closePoly = false;
-		}
-		currentlyDrawing = true;
-		polygonPoints.push_back(make_tuple(x, y));
-	}
-}
-
-void keyBoard(unsigned char key, int x, int y) {
-	if (key == 'p' || key == 'P') {
-		if (currentlyDrawing) {
-			currentlyDrawing = false;
-			closePoly = true;
-		}
-	}
-}
-
 
 //returns x-intercept between two lines, uses glut coords
 int xintercept(int x_1, int y_1, int x_2, int y_2, int x_3, int y_3, int x_4, int y_4) {
@@ -89,7 +41,7 @@ int yintercept(int x_1, int y_1, int x_2, int y_2, int x_3, int y_3, int x_4, in
 }
 
 //performs one clip of the Sutherland-Hodgman algorithm
-void clipToEdge(vector<tuple<int, int>> polygonPoints, int clipx_1, int clipy_1, int clipx_2, int clipy_2) {
+vector<tuple<int, int>> clipToEdge(vector<tuple<int, int>> polygonPoints, int clipx_1, int clipy_1, int clipx_2, int clipy_2) {
 	vector<tuple<int, int>> newPoly;
 	for (int i = 0; i < polygonPoints.size(); i++) {
 		int j = (i + 1) % polygonPoints.size();
@@ -118,19 +70,84 @@ void clipToEdge(vector<tuple<int, int>> polygonPoints, int clipx_1, int clipy_1,
 			newPoly.push_back(make_tuple(xintercept(clipx_1, clipy_1, clipx_2, clipy_2, x_1, y_1, x_2, y_2), yintercept(clipx_1, clipy_1, clipx_2, clipy_2, x_1, y_1, x_2, y_2)));
 		}
 	}
-	polygonPoints = newPoly;
+	return newPoly;
 }
 
 //Sutherland-Hodgman Algorithm
-void shAlgo(vector<tuple<int, int>> polygonPoints, vector<tuple<int, int>> clipperPoints) {
+vector<tuple<int, int>> shAlgo(vector<tuple<int, int>> polygonPoints, vector<tuple<int, int>> clipperPoints) {
 	for (int i = 0; i < clipperPoints.size(); i++) {
 		int j = (i + 1) % clipperPoints.size();
-		clipToEdge(polygonPoints, get<0>(clipperPoints[i]), get<1>(clipperPoints[i]), get<0>(clipperPoints[j]), get<1>(clipperPoints[j]));
+		 polygonPoints = clipToEdge(polygonPoints, get<0>(clipperPoints[i]), get<1>(clipperPoints[i]), get<0>(clipperPoints[j]), get<1>(clipperPoints[j]));
+	}
+	return polygonPoints;
+}
+
+//Scanline Fill Algorithm
+vector<tuple<int, int>> scanLineFill(vector<tuple<int, int>> polygonPoints) {
+	//find all points intersected by polygon
+	vector<tuple<int, int>> intersectPoints;
+	for (int i = 0; i < polygonPoints.size(); i++) { //iterate through each of the sides of the polygon
+		tuple<int, int> p1 = polygonPoints[i]; //first point
+		tuple<int, int> p2 = polygonPoints[(i + 1) % polygonPoints.size()]; //second point
+		int p1x = get<0>(p1);
+		int p1y = get<1>(p1);
+		int p2x = get<0>(p2);
+		int p2y = get<0>(p2);
+		float m = (float)(p2y - p1y) / (p2x - p1x); //slope of the line
+		for (int j = min(p1x, p2x); j <= max(p1x, p2x); j++) { //iterate through all of the x values between the two points
+			intersectPoints.push_back(make_tuple(j, ))
+		}
+	}
+}
+
+void processMenu(int option) {
+	switch (option) {
+	
+	//Polygon Clipping
+	case 1:
+		polygon= shAlgo(polygon, clipper);
+		break;
+	//Region Filling
+	case 2:
+		break;
+	//Window-to-Viewport Mapping
+	case 3:
+		break;
+	}
+}
+
+void createMenu() {
+	int menu;
+	menu = glutCreateMenu(processMenu);
+	glutAddMenuEntry("Polygon Clipping", 1);
+	glutAddMenuEntry("Region Filling", 2);
+	glutAddMenuEntry("Window-to-Viewport Mapping", 3);
+	glutAttachMenu(GLUT_RIGHT_BUTTON);
+}
+
+void mouseHandler(int button, int state, int x, int y) {
+	if (button == GLUT_LEFT_BUTTON && state == GLUT_DOWN) {
+		if (!currentlyDrawing) {
+			polygon.clear();
+			closePoly = false;
+		}
+		currentlyDrawing = true;
+		polygon.push_back(make_tuple(x, y));
+		//glutPostRedisplay();
+	}
+}
+
+void keyBoard(unsigned char key, int x, int y) {
+	if (key == 'p' || key == 'P') {
+		if (currentlyDrawing) {
+			currentlyDrawing = false;
+			closePoly = true;
+			//glutPostRedisplay();
+		}
 	}
 }
 
 void display() {
-	createMenu();
 	glClearColor(red, green, blue, 1.0); //bg color
 	glClear(GL_COLOR_BUFFER_BIT);
 
@@ -139,8 +156,8 @@ void display() {
 	bool first = true;
 	//change poly points to gl coords
 	polygonPointsOpenGL.clear();
-	for (int i = 0; i < polygonPoints.size(); i++) {
-		polygonPointsOpenGL.push_back(glutToGLCoords(get<0>(polygonPoints[i]), get<1>(polygonPoints[i])));
+	for (int i = 0; i < polygon.size(); i++) {
+		polygonPointsOpenGL.push_back(glutToGLCoords(get<0>(polygon[i]), get<1>(polygon[i])));
 	}
 	for (tuple<float, float> t : polygonPointsOpenGL) {
 		if (first) {
@@ -174,6 +191,7 @@ void display() {
 	//glPopAttrib();
 	glDisable(GL_LINE_STIPPLE);
 
+
 	glutReshapeWindow(500, 500);
 	glFlush();
 	glutPostRedisplay();
@@ -187,6 +205,7 @@ int main(int argc, char** argv) {
 	glutDisplayFunc(display);
 	glutMouseFunc(mouseHandler);
 	glutKeyboardFunc(keyBoard);
+	createMenu();
 	glutMainLoop();
 	return 0;
 }
