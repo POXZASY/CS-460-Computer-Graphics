@@ -10,6 +10,8 @@ using namespace std;
 
 int screenx = 500;
 int screeny = 500;
+int menux;
+int menuy;
 float red = 0.0;
 float green = 1.0;
 float blue = 0.5;
@@ -93,27 +95,33 @@ bool contains(vector<tuple<int, int>> vec, tuple<int,int> pt) {
 
 //Boundary Fill Algorithm
 struct Color {
-	float r;
-	float g;
-	float b;
+	public:
+		float r;
+		float g;
+		float b;
 };
+bool sameColor(Color lhs, Color rhs) {
+	return (lhs.r == rhs.r && lhs.b == rhs.b && lhs.g == rhs.g);
+}
 Color getPixelColor(int x, int y) {
 	Color color;
-
+	glReadPixels(x, y, 1, 1, GL_RGB, GL_FLOAT, &color);
+	return color;
 }
-
-void boundaryFill4(int x, int y, int boundary_color)
-{
-	if (getpixel(x, y) != boundary_color && getpixel(x, y) != fill_color){
-		//putpixel(x, y, fill_color);
-		glColor3f(1.0, 0.0, 0.0);
-		glVertex2f(x, y);
-		boundaryFill4(x + 1, y, boundary_color);
-		boundaryFill4(x, y + 1, boundary_color);
-		boundaryFill4(x - 1, y, boundary_color);
-		boundaryFill4(x, y - 1, boundary_color);
+void boundaryFill4(int x, int y){
+	if (0 <= x <= screenx && 0 <= y <= screeny) { //if point is on the screen
+		Color black;
+		black.r = 0.0; black.g = 0.0; black.b = 0.0;
+		Color red;
+		red.r = 1.0; red.g = 0.0; red.b = 0.0;
+		if (!(sameColor(getPixelColor(x, y), black) && !(sameColor(getPixelColor(x, y), red)))) {
+			fillPoints.push_back(make_tuple(x, y));
+			boundaryFill4(x + 1, y);
+			boundaryFill4(x, y + 1);
+			boundaryFill4(x - 1, y);
+			boundaryFill4(x, y - 1);
+		}
 	}
-	if()
 }
 void processMenu(int option) {
 	switch (option) {
@@ -124,16 +132,7 @@ void processMenu(int option) {
 		break;
 	//Region Filling
 	case 2:
-		if (currentlyFilling) {
-			currentlyFilling = false;
-			fillPoints.clear();
-		}
-		else if (!currentlyFilling && closePoly) {
-			currentlyFilling = true;
-			cout << "got here 0" << endl;
-			fillPoints = scanLineFill(polygon);
-			cout << "got here 3" << endl;
-		}
+		boundaryFill4(menux, menuy);
 		break;
 	//Window-to-Viewport Mapping
 	case 3:
@@ -156,10 +155,14 @@ void mouseHandler(int button, int state, int x, int y) {
 			polygon.clear();
 			closePoly = false;
 			currentlyFilling = false;
+			fillPoints.clear();
 		}
 		currentlyDrawing = true;
 		polygon.push_back(make_tuple(x, y));
-		//glutPostRedisplay();
+	}
+	if (button == GLUT_RIGHT_BUTTON && state == GLUT_DOWN) {
+		menux = x;
+		menuy = y;
 	}
 }
 
@@ -236,6 +239,9 @@ void display() {
 	glutPostRedisplay();
 }
 
+void mousePos(int x, int y) {
+	cout << "Red: " << getPixelColor(x, y).r << " Green: " << getPixelColor(x, y).g << " Blue: "<< getPixelColor(x, y).b << endl;
+}
 int main(int argc, char** argv) {
 	glutInit(&argc, argv); //Initialize glut
 	glutCreateWindow("Project 2");
@@ -244,6 +250,7 @@ int main(int argc, char** argv) {
 	glutDisplayFunc(display);
 	glutMouseFunc(mouseHandler);
 	glutKeyboardFunc(keyBoard);
+	glutPassiveMotionFunc(mousePos);
 	createMenu();
 	glutMainLoop();
 	return 0;
