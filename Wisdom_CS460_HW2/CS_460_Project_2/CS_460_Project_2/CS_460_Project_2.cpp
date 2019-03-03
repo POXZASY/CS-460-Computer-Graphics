@@ -100,8 +100,8 @@ bool contains(vector<tuple<int, int>> vec, tuple<int,int> pt) {
 }
 
 
+
 //Boundary Fill Algorithm
-/*
 struct Color {
 	public:
 		GLfloat r;
@@ -144,7 +144,63 @@ void boundaryFill4(int x, int y){
 		}
 	}
 }
-*/
+
+//Boundary Fill Attempt 2
+Color ** screen = new Color*[screenx];
+
+void setScreen() {
+	for (int i = 0; i < screenx; i++) {
+		screen[i] = new Color[screeny];
+	}
+	for (int i = 0; i < screenx; i++) {
+		cout << i << endl;
+		for (int j = 0; j < screeny; j++) {
+			Color color;
+			glReadPixels(i, j, 1, 1, GL_RGB, GL_FLOAT, &color);
+			screen[i][j] = color;
+		}
+	}
+}
+void boundaryFill(int x, int y) {
+	if (0 <= x && x <= screenx && 0 <= y && y <= screeny) { //if point is on the screen
+		
+		Color blue;
+		blue.r = 0.0; blue.g = 0.0; blue.b = 1.0;
+		Color red;
+		red.r = 1.0; red.g = 0.0; red.b = 0.0;
+		if (!(sameColor(screen[x][y], blue)) && !(sameColor(screen[x][y], red))) { //if not blue or red pixel, set red
+			cout << "Coordinates: "<< x << ", " << y << " Color: " << screen[x][y].r << ", " << screen[x][y].g << ", " << screen[x][y].b <<endl;
+			screen[x][y].r = 1.0;
+			screen[x][y].g = 0.0;
+			screen[x][y].b = 0.0;
+			boundaryFill(x + 1, y);
+			boundaryFill(x, y + 1);
+			boundaryFill(x - 1, y);
+			boundaryFill(x, y - 1);
+		}
+	}
+}
+void displayScreen() {
+	Color red;
+	red.r = 1.0; red.g = 0.0; red.b = 0.0;
+	for (int i = 0; i < 500; i++) {
+		for (int j = 0; j < 500; j++) {
+			if (sameColor(screen[i][j], red)) {
+				glBegin(GL_POINTS);
+				glColor3f(1.0, 0.0, 0.0);
+				float xval = get<0>(glutToGLCoords(i, j));
+				float yval = get<1>(glutToGLCoords(i, j));
+				glVertex2f(xval, yval);
+				glEnd();
+			}
+		}
+	}
+	for (int i = 0; i < screenx; i++) {
+		delete[] screen[i];
+	}
+	delete[] screen;
+}
+
 
 //SE
 /*
@@ -213,8 +269,13 @@ void processMenu(int option) {
 		break;
 	//Region Filling
 	case 2:
-		scanfill(polygon);
+		//scanfill(polygon);
 		//boundaryFill4(menux, menuy);
+		setScreen();
+		cout << "got here 1" << endl;
+		boundaryFill(menux, menuy);
+		cout << "got here 2" << endl;
+		displayScreen();
 		break;
 	//Window-to-Viewport Mapping
 	case 3:
