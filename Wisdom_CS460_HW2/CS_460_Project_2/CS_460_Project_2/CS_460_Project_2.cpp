@@ -8,21 +8,30 @@
 
 using namespace std;
 
-int screenx = 100;
-int screeny = 100;
+int screenx = 500;
+int screeny = 500;
 int menux;
 int menuy;
 float red = 0.0;
 float green = 1.0;
 float blue = 0.0;
+int clipperx1 = 125;
+int clippery1 = 125;
+int clipperx2 = 375;
+int clippery2 = 375;
 vector<tuple<int, int>> polygon;
 vector<tuple<float, float>> polygonPointsOpenGL;
 bool currentlyFilling = false;
 vector<tuple<int, int>> fillPoints;
-vector<tuple<int, int>> clipper = {make_tuple(125, 125), make_tuple(125, 375), make_tuple(375, 375), make_tuple(375, 125)};
+vector<tuple<int, int>> clipper = {make_tuple(clipperx1, clippery1), make_tuple(clipperx1, clippery2), make_tuple(clipperx2, clippery2), make_tuple(clipperx2, clippery1)};
 bool currentlyDrawing = false;
 bool closePoly = false;
 bool findingMenuPoint = true;
+bool drawingRectangle = false;
+tuple<int, int> rect1;
+tuple<int, int> rect2;
+int rectpoint = 1;
+vector<tuple<int, int>> viewport;
 
 tuple<float, float> glutToGLCoords(int x, int y) {
 	float GLx = ((float)x) / ((float)screenx / 2) - 1;
@@ -99,8 +108,6 @@ bool contains(vector<tuple<int, int>> vec, tuple<int,int> pt) {
 	}
 	return false;
 }
-
-
 
 //Boundary Fill Algorithm
 struct Color {
@@ -181,64 +188,23 @@ void boundaryFill(int x, int y) {
 	}
 }
 
+//Window-to-Viewport
+void windowToViewport() {
+	viewport.clear();
 
-//SE
-/*
-void draw_pixel(int x, int y)
-{
-	glColor3f(1.0, 0.0, 1.0);
-	glPointSize(1.0);
-	glBegin(GL_POINTS);
-	glVertex2i(x, y);
-	glEnd();
-}
-
-void edgedetect(float x1, float y1, float x2, float y2, int *le, int *re)
-{
-	float temp, x, mx;
-	int i;
-
-	if (y1 > y2)
-	{
-		temp = x1, x1 = x2, x2 = temp;
-		temp = y1, y1 = y2, y2 = temp;
+	//send values to origin
+	for (tuple<int, int> t : polygon) {
+		viewport.push_back(make_tuple(get<0>(t) - clipperx1, get<1>(t) - clippery1));
 	}
-
-	if (y1 == y2)
-		mx = x2 - x1;
-	else
-		mx = (x2 - x1) / (y2 - y1);
-
-	x = x1;
-
-	for (i = int(y1);i <= (int)y2;i++)
-	{
-		if (x < (float)le[i]) le[i] = (int)x;
-		if (x > (float)re[i]) re[i] = (int)x;
-		x += mx;
+	//dilate values
+	float xfact =  / ((float)clipperx2 - (float)clipperx1);
+	//send values to new rect
+	for (tuple<int, int> t : viewport) {
+		t = make_tuple(get<0>(t) + get<0>(rect1), get<1>(t) + get<1>(rect1));
 	}
 }
 
-void scanfill(vector<tuple<int, int>> polygonPoints){
-	vector<tuple<float, float>> floatPoints;
-	for (tuple<int, int> t : polygonPoints) {
-		floatPoints.push_back(make_tuple((float)get<0>(t),(float)get<1>(t)));
-	}
-	int le[500], re[500], i, j;
 
-	for (i = 0;i < 500;i++) le[i] = 500, re[i] = 0;
-
-	for (int k = 0; i < polygonPoints.size(); k++) {
-		edgedetect(get<0>(polygonPoints[i]), get<1>(polygonPoints[i]), get<0>(polygonPoints[(i + 1) % polygonPoints.size()]), get<1>(polygonPoints[(i + 1) % polygonPoints.size()]), le, re);
-	}
-
-	for (j = 0;j < 500;j++)	{
-		if (le[j] <= re[j])
-			for (i = le[j];i < re[j];i++)
-				draw_pixel(i, j);
-	}
-}
-*/
 
 void processMenu(int option) {
 	switch (option) {
@@ -260,6 +226,8 @@ void processMenu(int option) {
 	//Window-to-Viewport Mapping
 	case 3:
 		findingMenuPoint = true;
+		windowToViewport();
+		glutPostRedisplay();
 		break;
 	}
 }
@@ -275,15 +243,23 @@ void createMenu() {
 
 void mouseHandler(int button, int state, int x, int y) {
 	if (button == GLUT_LEFT_BUTTON && state == GLUT_DOWN) {
-		if (!currentlyDrawing) {
-			polygon.clear();
-			closePoly = false;
-			currentlyFilling = false;
-			fillPoints.clear();
+		if (drawingRectangle) {
+			if (rectpoint == 1) rect1 = make_tuple(x, y);
+			else if (rectpoint == 2) rect2 = make_tuple(x, y);
+			rectpoint = rectpoint % 2 + 1;
+			glutPostRedisplay();
 		}
-		currentlyDrawing = true;
-		polygon.push_back(make_tuple(x, y));
-		glutPostRedisplay();
+		else {
+			if (!currentlyDrawing) {
+				polygon.clear();
+				closePoly = false;
+				currentlyFilling = false;
+				fillPoints.clear();
+			}
+			currentlyDrawing = true;
+			polygon.push_back(make_tuple(x, y));
+			glutPostRedisplay();
+		}
 	}
 }
 
@@ -294,6 +270,9 @@ void keyBoard(unsigned char key, int x, int y) {
 			closePoly = true;
 			glutPostRedisplay();
 		}
+	}
+	else if (key == 'o' || key == 'O') {
+		drawingRectangle = !drawingRectangle;
 	}
 }
 
@@ -324,6 +303,26 @@ void display() {
 	}
 	glEnd();
 
+	//Drawing the Viewport
+	glLineStipple(1, 0xFF00);
+	glEnable(GL_LINE_STIPPLE);
+
+	glBegin(GL_LINES);
+	glVertex2f(get<0>(glutToGLCoords(get<0>(rect1), 0)), get<1>(glutToGLCoords(0, get<1>(rect1))));
+	glVertex2f(get<0>(glutToGLCoords(get<0>(rect2), 0)), get<1>(glutToGLCoords(0, get<1>(rect1))));
+
+	glVertex2f(get<0>(glutToGLCoords(get<0>(rect2), 0)), get<1>(glutToGLCoords(0, get<1>(rect1))));
+	glVertex2f(get<0>(glutToGLCoords(get<0>(rect2), 0)), get<1>(glutToGLCoords(0, get<1>(rect2))));
+
+	glVertex2f(get<0>(glutToGLCoords(get<0>(rect2), 0)), get<1>(glutToGLCoords(0, get<1>(rect2))));
+	glVertex2f(get<0>(glutToGLCoords(get<0>(rect1), 0)), get<1>(glutToGLCoords(0, get<1>(rect2))));
+
+	glVertex2f(get<0>(glutToGLCoords(get<0>(rect1), 0)), get<1>(glutToGLCoords(0, get<1>(rect2))));
+	glVertex2f(get<0>(glutToGLCoords(get<0>(rect1), 0)), get<1>(glutToGLCoords(0, get<1>(rect1))));
+	glEnd();
+
+	glDisable(GL_LINE_STIPPLE);
+
 	//filling the polygon
 	if (currentlyFilling) {
 		Color red;
@@ -344,7 +343,7 @@ void display() {
 	glColor3f(0.0, 0.0, 1.0);
 
 	//dashed lines
-	glLineStipple(1, 0xFFFF);
+	glLineStipple(1, 0xFF00);
 	glEnable(GL_LINE_STIPPLE);
 	//draw square
 	glBegin(GL_LINES);
@@ -376,9 +375,9 @@ void mousePos(int x, int y) {
 }
 int main(int argc, char** argv) {
 	glutInit(&argc, argv); //Initialize glut
-	glutCreateWindow("Project 2");
 	glutInitWindowSize(screenx, screeny);
 	glutInitWindowPosition(100, 100);
+	glutCreateWindow("Project 2");
 	glutDisplayFunc(display);
 	glutMouseFunc(mouseHandler);
 	glutKeyboardFunc(keyBoard);

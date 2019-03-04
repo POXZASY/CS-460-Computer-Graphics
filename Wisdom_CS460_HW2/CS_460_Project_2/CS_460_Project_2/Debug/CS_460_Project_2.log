@@ -1,5 +1,5 @@
 ﻿  CS_460_Project_2.cpp
-c:\users\larkin\documents\cs_460\wisdom_cs460_hw2\cs_460_project_2\cs_460_project_2\cs_460_project_2.cpp(1): error C2859: C:\Users\Larkin\Documents\CS_460\Wisdom_CS460_HW2\CS_460_Project_2\CS_460_Project_2\Debug\vc141.pdb is not the pdb file that was used when this precompiled header was created, recreate the precompiled header.
-c:\users\larkin\documents\cs_460\wisdom_cs460_hw2\cs_460_project_2\cs_460_project_2\cs_460_project_2.cpp(56): warning C4018: '<': signed/unsigned mismatch
-c:\users\larkin\documents\cs_460\wisdom_cs460_hw2\cs_460_project_2\cs_460_project_2\cs_460_project_2.cpp(88): warning C4018: '<': signed/unsigned mismatch
-c:\users\larkin\documents\cs_460\wisdom_cs460_hw2\cs_460_project_2\cs_460_project_2\cs_460_project_2.cpp(309): warning C4018: '<': signed/unsigned mismatch
+c:\users\larkin\documents\cs_460\wisdom_cs460_hw2\cs_460_project_2\cs_460_project_2\cs_460_project_2.cpp(64): warning C4018: '<': signed/unsigned mismatch
+c:\users\larkin\documents\cs_460\wisdom_cs460_hw2\cs_460_project_2\cs_460_project_2\cs_460_project_2.cpp(96): warning C4018: '<': signed/unsigned mismatch
+c:\users\larkin\documents\cs_460\wisdom_cs460_hw2\cs_460_project_2\cs_460_project_2\cs_460_project_2.cpp(272): warning C4018: '<': signed/unsigned mismatch
+  CS_460_Project_2.vcxproj -> C:\Users\Larkin\Documents\CS_460\Wisdom_CS460_HW2\CS_460_Project_2\Debug\CS_460_Project_2.exe
