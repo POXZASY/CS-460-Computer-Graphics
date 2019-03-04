@@ -32,6 +32,7 @@ tuple<int, int> rect1;
 tuple<int, int> rect2;
 int rectpoint = 1;
 vector<tuple<int, int>> viewport;
+bool drawingViewport = false;
 
 tuple<float, float> glutToGLCoords(int x, int y) {
 	float GLx = ((float)x) / ((float)screenx / 2) - 1;
@@ -197,7 +198,11 @@ void windowToViewport() {
 		viewport.push_back(make_tuple(get<0>(t) - clipperx1, get<1>(t) - clippery1));
 	}
 	//dilate values
-	float xfact =  / ((float)clipperx2 - (float)clipperx1);
+	int xfact = round(abs( ((float)(get<0>(rect2) - get<0>(rect1))) / ((float)clipperx2 - (float)clipperx1)    ));
+	int yfact = round(abs(  ((float)(get<1>(rect2) - get<1>(rect1))) / ((float)clippery2 - (float)clippery1)    ));
+	for (tuple<int, int> t : viewport) {
+		t = make_tuple(get<0>(t)*xfact, get<1>(t)*yfact);
+	}
 	//send values to new rect
 	for (tuple<int, int> t : viewport) {
 		t = make_tuple(get<0>(t) + get<0>(rect1), get<1>(t) + get<1>(rect1));
@@ -226,6 +231,7 @@ void processMenu(int option) {
 	//Window-to-Viewport Mapping
 	case 3:
 		findingMenuPoint = true;
+		drawingViewport = !drawingViewport;
 		windowToViewport();
 		glutPostRedisplay();
 		break;
@@ -341,6 +347,16 @@ void display() {
 		}
 	}
 	glColor3f(0.0, 0.0, 1.0);
+
+	//drawing the viewport
+	if (drawingViewport) {
+		glBegin(GL_LINES);
+		for (int i = 0; i < viewport.size(); i++) {
+			glVertex2f(get<0>(glutToGLCoords(get<0>(viewport[i]), get<1>(viewport[i]))), get<1>(glutToGLCoords(get<0>(viewport[i]), get<1>(viewport[i]))));
+			glVertex2f(get<0>(glutToGLCoords(get<0>(viewport[(i + 1) % viewport.size()]), get<1>(viewport[(i + 1) % viewport.size()]))), get<1>(glutToGLCoords(get<0>(viewport[(i + 1) % viewport.size()]), get<1>(viewport[(i + 1) % viewport.size()]))));
+		}
+		glEnd();
+	}
 
 	//dashed lines
 	glLineStipple(1, 0xFF00);
