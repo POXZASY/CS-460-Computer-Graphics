@@ -198,14 +198,14 @@ void windowToViewport() {
 		viewport.push_back(make_tuple(get<0>(t) - clipperx1, get<1>(t) - clippery1));
 	}
 	//dilate values
-	int xfact = round(abs( ((float)(get<0>(rect2) - get<0>(rect1))) / ((float)clipperx2 - (float)clipperx1)    ));
-	int yfact = round(abs(  ((float)(get<1>(rect2) - get<1>(rect1))) / ((float)clippery2 - (float)clippery1)    ));
-	for (tuple<int, int> t : viewport) {
-		t = make_tuple(get<0>(t)*xfact, get<1>(t)*yfact);
+	float xfact = abs(((float)(get<0>(rect2) - get<0>(rect1))) / ((float)clipperx2 - (float)clipperx1));
+	float yfact = abs(((float)(get<1>(rect2) - get<1>(rect1))) / ((float)clippery2 - (float)clippery1));
+	for (int i = 0; i < viewport.size(); i++) {
+		viewport[i] = make_tuple(round(get<0>(viewport[i])*xfact), round(get<1>(viewport[i])*yfact));
 	}
 	//send values to new rect
-	for (tuple<int, int> t : viewport) {
-		t = make_tuple(get<0>(t) + get<0>(rect1), get<1>(t) + get<1>(rect1));
+	for (int i = 0; i < viewport.size(); i++) {
+		viewport[i] = make_tuple(get<0>(viewport[i]) + get<0>(rect1), get<1>(viewport[i]) + get<1>(rect1));
 	}
 }
 
@@ -363,14 +363,14 @@ void display() {
 	glEnable(GL_LINE_STIPPLE);
 	//draw square
 	glBegin(GL_LINES);
-	glVertex2f(-.5, .5);
-	glVertex2f(-.5, -.5);
-	glVertex2f(-.5, -.5);
-	glVertex2f(.5, -.5);
-	glVertex2f(.5, -.5);
-	glVertex2f(.5, .5);
-	glVertex2f(.5, .5);
-	glVertex2f(-.5, .5);
+	glVertex2f(get<0>(glutToGLCoords(clipperx1, clippery1)), get<1>(glutToGLCoords(clipperx1, clippery1)));
+	glVertex2f(get<0>(glutToGLCoords(clipperx2, clippery1)), get<1>(glutToGLCoords(clipperx2, clippery1)));
+	glVertex2f(get<0>(glutToGLCoords(clipperx2, clippery1)), get<1>(glutToGLCoords(clipperx2, clippery1)));
+	glVertex2f(get<0>(glutToGLCoords(clipperx2, clippery2)), get<1>(glutToGLCoords(clipperx2, clippery2)));
+	glVertex2f(get<0>(glutToGLCoords(clipperx2, clippery2)), get<1>(glutToGLCoords(clipperx2, clippery2)));
+	glVertex2f(get<0>(glutToGLCoords(clipperx1, clippery2)), get<1>(glutToGLCoords(clipperx1, clippery2)));
+	glVertex2f(get<0>(glutToGLCoords(clipperx1, clippery2)), get<1>(glutToGLCoords(clipperx1, clippery2)));
+	glVertex2f(get<0>(glutToGLCoords(clipperx1, clippery1)), get<1>(glutToGLCoords(clipperx1, clippery1)));
 	glEnd();
 	//glPopAttrib();
 	glDisable(GL_LINE_STIPPLE);
