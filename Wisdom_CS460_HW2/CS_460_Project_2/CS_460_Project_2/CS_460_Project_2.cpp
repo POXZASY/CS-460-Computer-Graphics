@@ -33,6 +33,21 @@ tuple<int, int> rect2;
 int rectpoint = 1;
 vector<tuple<int, int>> viewport;
 bool drawingViewport = false;
+bool scalingViewport = false;
+int newViewportx1;
+int newViewporty1;
+int newViewportx2;
+int newViewporty2;
+bool scalingWindow = false;
+int newWindowx1;
+int newWindowy1;
+int newWindowx2;
+int newWindowy2;
+bool panningWindow = false;
+int newPanningx1;
+int newPanningy1;
+int newPanningx2;
+int newPanningy2;
 
 tuple<float, float> glutToGLCoords(int x, int y) {
 	float GLx = ((float)x) / ((float)screenx / 2) - 1;
@@ -209,7 +224,28 @@ void windowToViewport() {
 	}
 }
 
+void scaleViewport() {
+	rect2 = make_tuple(get<0>(rect2) + (newViewportx2-newViewportx1), get<1>(rect2) + (newViewporty2 - newViewporty1));
+	windowToViewport();
+}
 
+void scaleWindow() {
+	clipperx2 = clipperx2 + (newWindowx2 - newWindowx1);
+	clippery2 = clippery2 + (newWindowy2 - newWindowy1);
+	clipper = { make_tuple(clipperx1, clippery1), make_tuple(clipperx1, clippery2), make_tuple(clipperx2, clippery2), make_tuple(clipperx2, clippery1) };
+	polygon = shAlgo(polygon, clipper);
+	windowToViewport();
+}
+
+void panWindow() {
+	clipperx1 = clipperx1 + (newPanningx2 - newPanningx1);
+	clippery1 = clippery1 + (newPanningy2 - newPanningy1);
+	clipperx2 = clipperx2 + (newPanningx2 - newPanningx1);
+	clippery2 = clippery2 + (newPanningy2 - newPanningy1);
+	clipper = { make_tuple(clipperx1, clippery1), make_tuple(clipperx1, clippery2), make_tuple(clipperx2, clippery2), make_tuple(clipperx2, clippery1) };
+	polygon = shAlgo(polygon, clipper);
+	windowToViewport();
+}
 
 void processMenu(int option) {
 	switch (option) {
@@ -255,6 +291,18 @@ void mouseHandler(int button, int state, int x, int y) {
 			rectpoint = rectpoint % 2 + 1;
 			glutPostRedisplay();
 		}
+		else if(scalingViewport){
+			newViewportx1 = x;
+			newViewporty1 = y;
+		}
+		else if (scalingWindow) {
+			newWindowx1 = x;
+			newWindowy1 = y;
+		}
+		else if (panningWindow) {
+			newPanningx1 = x;
+			newPanningy1 = y;
+		}
 		else {
 			if (!currentlyDrawing) {
 				polygon.clear();
@@ -264,6 +312,26 @@ void mouseHandler(int button, int state, int x, int y) {
 			}
 			currentlyDrawing = true;
 			polygon.push_back(make_tuple(x, y));
+			glutPostRedisplay();
+		}
+	}
+	if (button == GLUT_LEFT_BUTTON && state == GLUT_UP) {
+		if (scalingViewport) {
+			newViewportx2 = x;
+			newViewporty2 = y;
+			scaleViewport();
+			glutPostRedisplay();
+		}
+		else if (scalingWindow) {
+			newWindowx2 = x;
+			newWindowy2 = y;
+			scaleWindow();
+			glutPostRedisplay();
+		}
+		else if (panningWindow) {
+			newPanningx2 = x;
+			newPanningy2 = y;
+			panWindow();
 			glutPostRedisplay();
 		}
 	}
@@ -279,6 +347,27 @@ void keyBoard(unsigned char key, int x, int y) {
 	}
 	else if (key == 'o' || key == 'O') {
 		drawingRectangle = !drawingRectangle;
+		scalingViewport = false;
+		scalingWindow = false;
+		panningWindow = false;
+	}
+	else if (key == 'i' || key == 'I') {
+		drawingRectangle = false;
+		scalingWindow = false;
+		panningWindow = false;
+		scalingViewport = !scalingViewport;
+	}
+	else if (key == 'u' || key == 'U') {
+		drawingRectangle = false;
+		scalingViewport = false;
+		panningWindow = false;
+		scalingWindow = !scalingWindow;
+	}
+	else if (key == 'y' || key == 'Y') {
+		drawingRectangle = false;
+		scalingViewport = false;
+		scalingWindow = false;
+		panningWindow = !panningWindow;
 	}
 }
 
