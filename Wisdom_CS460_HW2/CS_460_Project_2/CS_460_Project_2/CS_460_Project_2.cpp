@@ -142,34 +142,7 @@ Color getPixelColor(int x, int y) {
 	//cout << color.r << ", " << color.g << ", " << color.b << endl;
 	return color;
 }
-void boundaryFill4(int x, int y){
-	if (0 <= x && x <= screenx && 0 <= y && y <= screeny) { //if point is on the screen
-		Color blue;
-		blue.r = 0.0; blue.g = 0.0; blue.b = 1.0;
-		Color red;
-		red.r = 1.0; red.g = 0.0; red.b = 0.0;
-		
-		//cout << sameColor(getPixelColor(x, y), black) << endl;
-		if (!(sameColor(getPixelColor(x, y), blue) && !(sameColor(getPixelColor(x, y), red)))) {
-			cout << x << ", " << y << endl;
-			cout << getPixelColor(x,y).r << ", " << getPixelColor(x, y).g << ", " << getPixelColor(x, y).b << endl;
-			glBegin(GL_POINTS);
-			glColor3f(1.0, 0.0, 0.0);
-			float xval = get<0>(glutToGLCoords(x, y));
-			float yval = get<1>(glutToGLCoords(x, y));
-			glVertex2f(xval, yval);
-			glEnd();
-			cout << getPixelColor(x, y).r << ", " << getPixelColor(x, y).g << ", " << getPixelColor(x, y).b << endl;
-			//fillPoints.push_back(make_tuple(x, y));
-			boundaryFill4(x + 1, y);
-			boundaryFill4(x, y + 1);
-			boundaryFill4(x - 1, y);
-			boundaryFill4(x, y - 1);
-		}
-	}
-}
 
-//Boundary Fill Attempt 2
 Color ** screen = new Color*[screenx];
 
 void setScreen() {
