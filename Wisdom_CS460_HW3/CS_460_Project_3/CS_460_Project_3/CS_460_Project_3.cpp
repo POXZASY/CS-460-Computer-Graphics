@@ -21,6 +21,8 @@ double centerZ = 0;
 double upX = 0; 
 double upY = 1; 
 double upZ = 0;
+float rotater = 0;
+
 
 void processMenu(int option) {
 	red = 1.0;
@@ -143,23 +145,50 @@ void drawPlaneandGrid() {
 }
 
 void drawLever() {
+	float height = 20;
 	//Cylinder
 	glColor3f(0.0, 1.0, 0.0);
-	//make the cylinder object
-	GLUquadricObj* cylinder = gluNewQuadric();
-	gluQuadricDrawStyle(cylinder, GLU_LINE);
+	//make the wireframe object
+	GLUquadricObj* wireobj = gluNewQuadric();
+	gluQuadricDrawStyle(wireobj, GLU_LINE);
 	//make the base cylinder
 	glPushMatrix();
 	glRotatef(90, 1, 0, 0);
-	gluCylinder(cylinder, 2, 2, 20, 8, 8);
+	gluCylinder(wireobj, 2, 2, height, 4, 4);
 	glPopMatrix();
 	//make the horizontal bar
 	glPushMatrix();
-	gl
+	glRotatef(90, 0, 1, 0);
+	glRotatef(rotater, 0, 1, 0); //active rotation
+	glTranslatef(0, 0, -height / 2);
+	gluCylinder(wireobj, 2, 2, height, 4, 4);
+	glPopMatrix();
+	//three initial spheres
+	glPushMatrix();
+	gluSphere(wireobj, 3, 8, 8);
+	glPopMatrix();
+
+	glPushMatrix();
+	/*
+	glTranslatef(height / 2, 0, 0);
+	glRotatef(rotater, 0, 1, 0);
+	glTranslatef(-height / 2, 0, 0);
+	gluSphere(wireobj, 3, 8, 8);
+	*/
+	glPopMatrix();
+
+	glPushMatrix();
+	glTranslatef(-height/2, 0, 0);
+	glRotatef(rotater, 0, 1, 0);
+	glTranslatef(height/2, 0,  0);
+	gluSphere(wireobj, 3, 8, 8);
+	glPopMatrix();
+
 }
 
 void display() {
 	glClearColor(red, green, blue, 0.0);
+	rotater+=.1;
 	//glClearDepth(1.0);
 	glClear(GL_COLOR_BUFFER_BIT);
 	glMatrixMode(GL_PROJECTION);
@@ -197,7 +226,7 @@ void display() {
 	drawPlaneandGrid();
 	drawLever();
 
-	//glutPostRedisplay();
+	glutPostRedisplay();
 	glFlush();
 }
 
