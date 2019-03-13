@@ -118,19 +118,7 @@ void createMenu() {
 	glutAttachMenu(GLUT_RIGHT_BUTTON);
 }
 
-void display() {
-	glClearColor(red, green, blue, 0.0);
-	//glClearDepth(1.0);
-	glClear(GL_COLOR_BUFFER_BIT);
-	glMatrixMode(GL_PROJECTION);
-	glLoadIdentity();
-	gluPerspective(60, ((float)screenx / screeny), 0.01, 500);
-
-	glMatrixMode(GL_MODELVIEW);
-	glLoadIdentity();
-	glViewport(0, 0, screenx, screeny);
-	gluLookAt(eyeX, eyeY, eyeZ, centerX, centerY, centerZ, upX, upY, upZ);
-
+void drawPlaneandGrid() {
 	//draw the plane
 	glColor3f(1, 1, 1);
 	glBegin(GL_POLYGON);
@@ -143,28 +131,73 @@ void display() {
 	//Grid
 	glColor3f(1.0, 0.0, 0.0);
 	glBegin(GL_LINES);
-	for (float x = -97.5; x <= 97.5; x=x+5) {
-		glVertex3f(x , -10, -100);
+	for (float x = -97.5; x <= 97.5; x = x + 5) {
+		glVertex3f(x, -10, -100);
 		glVertex3f(x, -10, 100);
 	}
-	for (float z = -97.5; z <= 97.5; z=z+5) {
+	for (float z = -97.5; z <= 97.5; z = z + 5) {
 		glVertex3f(-100, -10, z);
 		glVertex3f(100, -10, z);
 	}
 	glEnd();
+}
 
-	/*
+void drawLever() {
 	//Cylinder
 	glColor3f(0.0, 1.0, 0.0);
+	//make the cylinder object
 	GLUquadricObj* cylinder = gluNewQuadric();
-	gluCylinder(cylinder, 10, 10, 50, 32, 32);
-	*/
-	
-	//Setting up the view V1
-	
+	gluQuadricDrawStyle(cylinder, GLU_LINE);
+	//make the base cylinder
+	glPushMatrix();
+	glRotatef(90, 1, 0, 0);
+	gluCylinder(cylinder, 2, 2, 20, 8, 8);
+	glPopMatrix();
+	//make the horizontal bar
+	glPushMatrix();
+	gl
+}
 
-	
-	glutPostRedisplay();
+void display() {
+	glClearColor(red, green, blue, 0.0);
+	//glClearDepth(1.0);
+	glClear(GL_COLOR_BUFFER_BIT);
+	glMatrixMode(GL_PROJECTION);
+	glLoadIdentity();
+	gluPerspective(60, ((float)screenx / screeny), 0.01, 500);
+
+	glMatrixMode(GL_MODELVIEW);
+	glLoadIdentity();
+
+	//1
+	glViewport(screenx / 2, 0, screenx / 2, screeny / 2);
+	glLoadIdentity();
+	gluLookAt(eyeX, eyeY, eyeZ, centerX, centerY, centerZ, upX, upY, upZ);
+	drawPlaneandGrid();
+	drawLever();
+
+	//2
+	glViewport(0, 0, screenx / 2, screeny / 2);
+	glLoadIdentity();
+	gluLookAt(0, 40, 0, centerX, centerY, centerZ, 0, 0, 1);
+	drawPlaneandGrid();
+	drawLever();
+
+	//3
+	glViewport(0, screeny / 2, screenx / 2, screeny / 2);
+	glLoadIdentity();
+	gluLookAt(40, 0, 0, centerX, centerY, centerZ, upX, upY, upZ);
+	drawPlaneandGrid();
+	drawLever();
+
+	//4
+	glViewport(screenx / 2, screeny / 2, screenx / 2, screeny / 2);
+	glLoadIdentity();
+	gluLookAt(0, 0, 40, centerX, centerY, centerZ, upX, upY, upZ);
+	drawPlaneandGrid();
+	drawLever();
+
+	//glutPostRedisplay();
 	glFlush();
 }
 
