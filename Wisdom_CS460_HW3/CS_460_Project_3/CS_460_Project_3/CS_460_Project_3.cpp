@@ -21,6 +21,12 @@ double centerZ = 0;
 double upX = 0; 
 double upY = 1; 
 double upZ = 0;
+double eyeX2 = 0;
+double eyeY2 = 0;
+double eyeZ2 = 40;
+double centerX2 = 0;
+double centerY2 = 0;
+double centerZ2 = 0;
 float rotater = 0;
 bool rot = false;
 
@@ -217,8 +223,31 @@ void drawLever() {
 
 }
 
-void keyboardHandler() {
-
+void keyboardHandler(unsigned char key, int x, int y) {
+	if (key == 'w' || key == 'W') {
+		eyeZ2--;
+		centerZ2--;
+	}
+	else if (key == 'a' || key == 'A') {
+		eyeX2--;
+		centerX2--;
+	}
+	else if (key == 's' || key == 'S') {
+		eyeZ2++;
+		centerZ2++;
+	}
+	else if (key == 'd' || key == 'D') {
+		eyeX2++;
+		centerX2++;
+	}
+	else if (key == 'r' || key == 'R') {
+		eyeY2++;
+		centerY2++;
+	}
+	else if (key == 'f' || key == 'F') {
+		eyeY2--;
+		centerY2--;
+	}
 }
 
 void display() {
@@ -235,7 +264,7 @@ void display() {
 	//1
 	glViewport(screenx / 2, 0, screenx / 2, screeny / 2);
 	glLoadIdentity();
-	gluLookAt(eyeX, eyeY, eyeZ, centerX, centerY, centerZ, upX, upY, upZ);
+	gluLookAt(eyeX2, eyeY2, eyeZ2, centerX2, centerY2, centerZ2, upX, upY, upZ);
 	drawPlaneandGrid();
 	drawLever();
 
