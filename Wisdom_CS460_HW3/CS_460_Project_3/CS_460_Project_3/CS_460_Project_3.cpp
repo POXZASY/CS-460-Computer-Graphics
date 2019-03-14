@@ -169,19 +169,23 @@ void drawLever() {
 	glPopMatrix();
 
 	glPushMatrix();
-	/*
-	glTranslatef(height / 2, 0, 0);
 	glRotatef(rotater, 0, 1, 0);
 	glTranslatef(-height / 2, 0, 0);
 	gluSphere(wireobj, 3, 8, 8);
-	*/
 	glPopMatrix();
 
 	glPushMatrix();
-	glTranslatef(-height/2, 0, 0);
 	glRotatef(rotater, 0, 1, 0);
 	glTranslatef(height/2, 0,  0);
 	gluSphere(wireobj, 3, 8, 8);
+	glPopMatrix();
+
+	//two hanging objects
+	glPushMatrix();
+	glRotatef(90, 1, 0, 0);
+	glRotatef(rotater, 0, 0, 1);
+	glTranslatef(0, 0, -height / 2);
+	gluCylinder(wireobj, 0, 2, height / 2, 4, 4);
 	glPopMatrix();
 
 }
