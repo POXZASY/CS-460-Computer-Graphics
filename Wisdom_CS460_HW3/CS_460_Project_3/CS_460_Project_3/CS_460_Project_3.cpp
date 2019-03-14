@@ -22,12 +22,11 @@ double upX = 0;
 double upY = 1; 
 double upZ = 0;
 float rotater = 0;
+bool rot = false;
 
 
 void processMenu(int option) {
-	red = 1.0;
-	green = 0.0;
-	blue = 0.0;
+	if (option == 1) rot = !rot;
 	glutPostRedisplay();
 }
 //Roll (rotate around viewer z axis)
@@ -154,46 +153,77 @@ void drawLever() {
 	//make the base cylinder
 	glPushMatrix();
 	glRotatef(90, 1, 0, 0);
-	gluCylinder(wireobj, 2, 2, height, 4, 4);
+	gluCylinder(wireobj, 1.5, 1.5, height, 4, 4);
 	glPopMatrix();
 	//make the horizontal bar
 	glPushMatrix();
 	glRotatef(90, 0, 1, 0);
 	glRotatef(rotater, 0, 1, 0); //active rotation
 	glTranslatef(0, 0, -height / 2);
-	gluCylinder(wireobj, 2, 2, height, 4, 4);
+	gluCylinder(wireobj, 1.5, 1.5, height, 4, 4);
 	glPopMatrix();
 	//three initial spheres
 	glPushMatrix();
-	gluSphere(wireobj, 3, 8, 8);
+	gluSphere(wireobj, 2, 8, 8);
 	glPopMatrix();
 
 	glPushMatrix();
 	glRotatef(rotater, 0, 1, 0);
 	glTranslatef(-height / 2, 0, 0);
-	gluSphere(wireobj, 3, 8, 8);
+	gluSphere(wireobj, 2, 8, 8);
 	glPopMatrix();
 
 	glPushMatrix();
 	glRotatef(rotater, 0, 1, 0);
 	glTranslatef(height/2, 0,  0);
-	gluSphere(wireobj, 3, 8, 8);
+	gluSphere(wireobj, 2, 8, 8);
 	glPopMatrix();
 
-	//two hanging objects
+	//two hanging spears
 	glPushMatrix();
 	glRotatef(90, 1, 0, 0);
-	glRotatef(rotater, 0, 0, 1);
+	glRotatef(-rotater, 0, 0, 1);
+	glTranslatef(-height / 2, 0, 0);
+	glRotatef(rotater+180, 1, 0, 0);
 	glTranslatef(0, 0, -height / 2);
 	gluCylinder(wireobj, 0, 2, height / 2, 4, 4);
 	glPopMatrix();
+
+	glPushMatrix();
+	glRotatef(90, 1, 0, 0);
+	glRotatef(-rotater, 0, 0, 1);
+	glTranslatef(height / 2, 0, 0);
+	glRotatef(-rotater - 180, 1, 0, 0);
+	glTranslatef(0, 0, -height / 2);
+	gluCylinder(wireobj, 0, 2, height / 2, 4, 4);
+	glPopMatrix();
+
+	//two hanging spheres
+	glPushMatrix();
+	glRotatef(rotater, 0, 1, 0);
+	glTranslatef(-height / 2, 0, 0);
+	glRotatef(rotater, 1, 0, 0);
+	glTranslatef(0, -height / 2, 0);
+	gluSphere(wireobj, 4, 8, 8);
+	glPopMatrix();
+
+	glPushMatrix();
+	glRotatef(rotater, 0, 1, 0);
+	glTranslatef(height / 2, 0, 0);
+	glRotatef(-rotater, 1, 0, 0);
+	glTranslatef(0, -height / 2, 0);
+	gluSphere(wireobj, 4, 8, 8);
+	glPopMatrix();
+
+}
+
+void keyboardHandler() {
 
 }
 
 void display() {
 	glClearColor(red, green, blue, 0.0);
-	rotater+=.1;
-	//glClearDepth(1.0);
+	if(rot) rotater+=.05;
 	glClear(GL_COLOR_BUFFER_BIT);
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
@@ -242,7 +272,7 @@ int main(int argc, char** argv){
 	glutCreateWindow("Project 3");
 	glutDisplayFunc(display);
 	//glutMouseFunc(mouseHandler);
-	//glutKeyboardFunc(keyboardHandler);
+	glutKeyboardFunc(keyboardHandler);
 	createMenu();
 	glutMainLoop();
 	return 0;
