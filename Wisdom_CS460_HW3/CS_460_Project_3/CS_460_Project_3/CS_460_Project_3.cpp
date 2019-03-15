@@ -39,13 +39,13 @@ void processMenu(int option) {
 void rollMenu(int option) {
 	switch (option) {
 	case 1:
-		eyeX = eyeX * cos(10*PI/180) - eyeY * sin(10 * PI / 180);
-		eyeY = eyeX * sin(10 * PI / 180) + eyeY * cos(10 * PI / 180);
+		eyeX2 = eyeX2 * cos(10*PI/180) - eyeY2 * sin(10 * PI / 180);
+		eyeY2 = eyeX2 * sin(10 * PI / 180) + eyeY2 * cos(10 * PI / 180);
 		glutPostRedisplay();
 		break;
 	case 2:
-		eyeX = eyeX * cos(-10 * PI / 180) - eyeY * sin(-10 * PI / 180);
-		eyeY = eyeX * sin(-10 * PI / 180) + eyeY * cos(-10 * PI / 180);
+		eyeX2 = eyeX2 * cos(-10 * PI / 180) - eyeY2 * sin(-10 * PI / 180);
+		eyeY2 = eyeX2 * sin(-10 * PI / 180) + eyeY2 * cos(-10 * PI / 180);
 		glutPostRedisplay();
 		break;
 	}
@@ -54,13 +54,13 @@ void rollMenu(int option) {
 void pitchMenu(int option) {
 	switch (option) {
 	case 1:
-		eyeY = eyeY * cos(10 * PI / 180) - eyeZ * sin(10 * PI / 180);
-		eyeZ = eyeY * sin(10 * PI / 180) + eyeZ * cos(10 * PI / 180);
+		eyeY2 = eyeY2 * cos(10 * PI / 180) - eyeZ2 * sin(10 * PI / 180);
+		eyeZ2 = eyeY2 * sin(10 * PI / 180) + eyeZ2 * cos(10 * PI / 180);
 		glutPostRedisplay();
 		break;
 	case 2:
-		eyeY = eyeY * cos(-10 * PI / 180) - eyeZ * sin(-10 * PI / 180);
-		eyeZ = eyeY * sin(-10 * PI / 180) + eyeZ * cos(-10 * PI / 180);
+		eyeY2 = eyeY2 * cos(-10 * PI / 180) - eyeZ2 * sin(-10 * PI / 180);
+		eyeZ2 = eyeY2 * sin(-10 * PI / 180) + eyeZ2 * cos(-10 * PI / 180);
 		glutPostRedisplay();
 		break;
 	}
@@ -69,13 +69,13 @@ void pitchMenu(int option) {
 void yawMenu(int option) {
 	switch (option) {
 	case 1:
-		eyeX = eyeX * cos(10 * PI / 180) + eyeZ * sin(10 * PI / 180);
-		eyeZ = -eyeX * sin(10 * PI / 180) + eyeZ * cos(10 * PI / 180);
+		eyeX2 = eyeX2 * cos(10 * PI / 180) + eyeZ2 * sin(10 * PI / 180);
+		eyeZ2 = -eyeX2 * sin(10 * PI / 180) + eyeZ2 * cos(10 * PI / 180);
 		glutPostRedisplay();
 		break;
 	case 2:
-		eyeX = eyeX * cos(-10 * PI / 180) + eyeZ * sin(-10 * PI / 180);
-		eyeZ = -eyeX * sin(-10 * PI / 180) + eyeZ * cos(-10 * PI / 180);
+		eyeX2 = eyeX2 * cos(-10 * PI / 180) + eyeZ2 * sin(-10 * PI / 180);
+		eyeZ2 = -eyeX2 * sin(-10 * PI / 180) + eyeZ2 * cos(-10 * PI / 180);
 		glutPostRedisplay();
 		break;
 	}
@@ -84,15 +84,15 @@ void yawMenu(int option) {
 void slideMenu(int option) {
 	switch (option) {
 	case 1:
-		eyeX = eyeX * 1.1;
-		eyeY = eyeY * 1.1;
-		eyeZ = eyeZ * 1.1;
+		eyeX2 = eyeX2 * 1.1;
+		eyeY2 = eyeY2 * 1.1;
+		eyeZ2 = eyeZ2 * 1.1;
 		glutPostRedisplay();
 		break;
 	case 2:
-		eyeX = eyeX * 0.9;
-		eyeY = eyeY * 0.9;
-		eyeZ = eyeZ * 0.9;
+		eyeX2 = eyeX2 * 0.9;
+		eyeY2 = eyeY2 * 0.9;
+		eyeZ2 = eyeZ2 * 0.9;
 		glutPostRedisplay();
 		break;
 	}
