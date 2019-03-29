@@ -13,7 +13,7 @@ float red = 0.0;
 float green = 0.0;
 float blue = 0.0;
 
-
+/*
 struct Color {
 	public:
 		unsigned char r;
@@ -25,18 +25,25 @@ vector<vector<Color>> image;
 vector<vector<unsigned char>> red;
 vector<vector<unsigned char>> blue;
 vector<vector<unsigned char>> green;
-int width;
-int height;
+*/
+const int width = 384;
+const int height = 256;
 
-unsigned char* readBMP(char* filename) {
+unsigned char image[width * height * 4];
+
+
+void readBMP(const char * filename) {
 	FILE* img = fopen(filename, "rb");
+
 	//get rid of the .bmp header
 	unsigned char header[54];
 	fread(header, sizeof(unsigned char), 54, img);
 	//get width, height
-	width = (int)(header[18]);
-	height = (int)(header[22]);
-	int padding = 0; 
+	//width = (int)(header[18]);
+	//height = (int)(header[22]);
+
+	fread(image, sizeof(unsigned char), width*height*4, img);
+	fclose(img);
 	
 }
 
@@ -51,11 +58,13 @@ void display() {
 	glVertex3f(.5, .5, 0);
 	glVertex3f(.5, -.5, 0);
 	glEnd();
+	
+	//populate "image" array
 	readBMP("flower.bmp");
-	for (int i = 0; i < 100; i++) {
-		cout << buffer[i] << endl;
-	}
-	//glutPostRedisplay();
+	glRasterPos2f(-0.75, -0.5);
+	glDrawPixels(width, height, GL_BGR_EXT, GL_UNSIGNED_BYTE, image);
+	
+	glutPostRedisplay();
 	glFlush();
 }
 
