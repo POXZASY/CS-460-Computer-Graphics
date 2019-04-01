@@ -132,19 +132,18 @@ void morphImage() {
 		for (int i = 0; i < width; i++) {
 			if (i < width / 2) { //left half
 				if (j < height / 2) {//3rd quadrant
-					cout << round(i*xratio3) << ", " << round(j*yratio3) << endl;
 					structimageq3_new[round(i*xratio3)][round(j*yratio3)] = structimageq3[i][j];
 				}
 				else { //2nd quadrant
-					structimageq2_new[round(i*xratio2)][round((j-height/2)*yratio2 + height/2)] = structimageq2[i][j];
+					structimageq2_new[round(i*xratio2)][round(((j - (height / 2))*yratio2) + (height / 2) + changeY)] = structimageq2[i][j];
 				}
 			}
 			else { //right half
 				if (j < height / 2) {//4th quadrant
-					structimageq4_new[round(i*xratio4)][round(j*yratio4)] = structimageq4[i][j];
+					structimageq4_new[round(((i - (width / 2))*xratio4) + (width / 2) + changeX)][round(j*yratio4)] = structimageq4[i][j];
 				}
 				else { //1st quadrant
-					structimageq1_new[round((i - width/2)*xratio1 + width/2)][round(j*yratio1)] = structimageq1[i][j];
+					structimageq1_new[round(((i - (width / 2))*xratio1) + (width / 2) + changeX)][round(round(((j - (height / 2))*yratio1) + (height / 2) + changeY))] = structimageq1[i][j];
 				}
 			}
 		}
@@ -152,14 +151,14 @@ void morphImage() {
 
 
 	//INTERPOLATION
+	//Combine to one matrix, fill in gaps, split back
 
 
 
-
-	//structimageq1 = structimageq1_new;
-	//structimageq2 = structimageq2_new;
+	structimageq1 = structimageq1_new;
+	structimageq2 = structimageq2_new;
 	structimageq3 = structimageq3_new;
-	//structimageq4 = structimageq4_new;
+	structimageq4 = structimageq4_new;
 
 }
 
