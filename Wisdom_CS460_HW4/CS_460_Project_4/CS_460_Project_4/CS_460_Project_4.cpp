@@ -46,6 +46,7 @@ void readBMP(const char * filename) {
 
 struct Color {
 public:
+	bool defined = false;
 	unsigned char r;
 	unsigned char g;
 	unsigned char b;
@@ -69,6 +70,7 @@ void bitsToStructs() {
 					inc++;
 					color.r = image[inc];
 					inc++;
+					color.defined = true;
 					structimageq3[i][j] = color;
 				}
 				else { //2nd quadrant
@@ -79,6 +81,7 @@ void bitsToStructs() {
 					inc++;
 					color.r = image[inc];
 					inc++;
+					color.defined = true;
 					structimageq2[i][j] = color;
 				}
 			}
@@ -91,6 +94,7 @@ void bitsToStructs() {
 					inc++;
 					color.r = image[inc];
 					inc++;
+					color.defined = true;
 					structimageq4[i][j] = color;
 				}
 				else { //1st quadrant
@@ -101,6 +105,7 @@ void bitsToStructs() {
 					inc++;
 					color.r = image[inc];
 					inc++;
+					color.defined = true;
 					structimageq1[i][j] = color;
 				}
 			}
@@ -135,31 +140,99 @@ void morphImage() {
 					structimageq3_new[round(i*xratio3)][round(j*yratio3)] = structimageq3[i][j];
 				}
 				else { //2nd quadrant
-					structimageq2_new[round(i*xratio2)][round(((j - (height / 2))*yratio2) + (height / 2) + changeY)] = structimageq2[i][j];
+					structimageq2_new[round(i*xratio2)][(int)(((j - (height / 2))*yratio2) + (height / 2) + changeY)] = structimageq2[i][j];
 				}
 			}
 			else { //right half
 				if (j < height / 2) {//4th quadrant
-					structimageq4_new[round(((i - (width / 2))*xratio4) + (width / 2) + changeX)][round(j*yratio4)] = structimageq4[i][j];
+					structimageq4_new[(int)(((i - (width / 2))*xratio4) + (width / 2) + changeX)][round(j*yratio4)] = structimageq4[i][j];
 				}
 				else { //1st quadrant
-					structimageq1_new[round(((i - (width / 2))*xratio1) + (width / 2) + changeX)][round(round(((j - (height / 2))*yratio1) + (height / 2) + changeY))] = structimageq1[i][j];
+					structimageq1_new[(int)(((i - (width / 2))*xratio1) + (width / 2) + changeX)][(int)(((j - (height / 2))*yratio1) + (height / 2) + changeY)] = structimageq1[i][j];
 				}
 			}
 		}
 	}
 
-
 	//INTERPOLATION
 	//Combine to one matrix, fill in gaps, split back
-
-
+	vector<vector<Color>> interpolateVec(width, vector<Color>(height));
+	for (int j = 0; j < height; j++) {
+		for (int i = 0; i < width; i++) {
+			if (i < width / 2) { //left half
+				if (j < height / 2) {//3rd quadrant
+					interpolateVec[i][j] = structimageq3_new[i][j];
+				}
+				else { //2nd quadrant
+					interpolateVec[i][j] = structimageq2_new[i][j];
+				}
+			}
+			else { //right half
+				if (j < height / 2) {//4th quadrant
+					interpolateVec[i][j] = structimageq4_new[i][j];
+				}
+				else { //1st quadrant
+					interpolateVec[i][j] = structimageq1_new[i][j];
+				}
+			}
+		}
+	}
+	for (int i = 0; i < width; i++) {
+		for (int j = 0; j < height; j++) {
+			if (!interpolateVec[i][j].defined || true) {
+				/*
+				unsigned int ravg = 0;
+				unsigned int gavg = 0;
+				unsigned int bavg = 0;
+				int count = 0;
+				for (int a = -1; a <= 1; a++) {
+					for (int b = -1; b <= 1; b++) {
+						if ((a != b || b != 0) && !interpolateVec[i+a][j+b].defined) {
+							ravg += (unsigned int)interpolateVec[i + a][j + b].r;
+							gavg += (unsigned int)interpolateVec[i + a][j + b].g;
+							bavg += (unsigned int)interpolateVec[i + a][j + b].b;
+							count++;
+						}
+					}
+				}
+				ravg = (unsigned int) (ravg / count);
+				gavg = (unsigned int)(gavg / count);
+				bavg = (unsigned int)(bavg / count);
+				*/
+				Color color;
+				color.r = (unsigned char)255;//ravg;
+				color.g = (unsigned char)255;//gavg;
+				color.b = (unsigned char)255;//bavg;
+				color.defined = true;
+				interpolateVec[i][j] = color;
+			}
+		}
+	}
+	for (int j = 0; j < height; j++) {
+		for (int i = 0; i < width; i++) {
+			if (i < width / 2) { //left half
+				if (j < height / 2) {//3rd quadrant
+					structimageq3_new[i][j] = interpolateVec[i][j];
+				}
+				else { //2nd quadrant
+					structimageq2_new[i][j] = interpolateVec[i][j];
+				}
+			}
+			else { //right half
+				if (j < height / 2) {//4th quadrant
+					structimageq4_new[i][j] = interpolateVec[i][j];
+				}
+				else { //1st quadrant
+					structimageq1_new[i][j] = interpolateVec[i][j];
+				}
+			}
+		}
+	}
 
 	structimageq1 = structimageq1_new;
 	structimageq2 = structimageq2_new;
 	structimageq3 = structimageq3_new;
 	structimageq4 = structimageq4_new;
-
 }
 
 void structsToBits() {
@@ -256,7 +329,11 @@ void mouseHandler(int button, int state, int x, int y) {
 void mousePos(int x, int y) {
 	if (mouseCurrentlyDown) {
 		changeX = x - initialMouseX;
+		if (changeX >= width / 2) changeX = (width / 2) - 1;
+		if (changeX < -width / 2) changeX = -width / 2;
 		changeY = -(y - initialMouseY);
+		if (changeY >= height / 2) changeY = (height / 2) - 1;
+		if (changeY < -height / 2) changeY = -height / 2;
 		//cout << "X: " << changeX << ", Y: " << changeY << endl;
 	}
 }
