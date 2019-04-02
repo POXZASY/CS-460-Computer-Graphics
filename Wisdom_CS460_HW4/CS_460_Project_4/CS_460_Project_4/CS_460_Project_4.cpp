@@ -159,8 +159,8 @@ void morphImage() {
 	vector<vector<Color>> interpolateVec(width, vector<Color>(height));
 	for (int j = 0; j < height; j++) {
 		for (int i = 0; i < width; i++) {
-			if (i < width / 2) { //left half
-				if (j < height / 2) {//3rd quadrant
+			if (i < width / 2 + changeX) { //left half
+				if (j < height / 2 + changeY) {//3rd quadrant
 					interpolateVec[i][j] = structimageq3_new[i][j];
 				}
 				else { //2nd quadrant
@@ -168,7 +168,7 @@ void morphImage() {
 				}
 			}
 			else { //right half
-				if (j < height / 2) {//4th quadrant
+				if (j < height / 2 + changeY) {//4th quadrant
 					interpolateVec[i][j] = structimageq4_new[i][j];
 				}
 				else { //1st quadrant
@@ -179,15 +179,14 @@ void morphImage() {
 	}
 	for (int i = 0; i < width; i++) {
 		for (int j = 0; j < height; j++) {
-			if (!interpolateVec[i][j].defined || true) {
-				/*
+			if (!interpolateVec[i][j].defined) {
 				unsigned int ravg = 0;
 				unsigned int gavg = 0;
 				unsigned int bavg = 0;
 				int count = 0;
 				for (int a = -1; a <= 1; a++) {
 					for (int b = -1; b <= 1; b++) {
-						if ((a != b || b != 0) && !interpolateVec[i+a][j+b].defined) {
+						if ((a != b || b != 0) && i+a >= 0 && j+b >=0 && i+a <= 255 && j+b <= 255 && interpolateVec[i+a][j+b].defined) {
 							ravg += (unsigned int)interpolateVec[i + a][j + b].r;
 							gavg += (unsigned int)interpolateVec[i + a][j + b].g;
 							bavg += (unsigned int)interpolateVec[i + a][j + b].b;
@@ -195,14 +194,15 @@ void morphImage() {
 						}
 					}
 				}
-				ravg = (unsigned int) (ravg / count);
-				gavg = (unsigned int)(gavg / count);
-				bavg = (unsigned int)(bavg / count);
-				*/
+				if (count > 0) {
+					ravg = (unsigned int)(ravg / count);
+					gavg = (unsigned int)(gavg / count);
+					bavg = (unsigned int)(bavg / count);
+				}
 				Color color;
-				color.r = (unsigned char)255;//ravg;
-				color.g = (unsigned char)255;//gavg;
-				color.b = (unsigned char)255;//bavg;
+				color.r = (unsigned char)ravg;
+				color.g = (unsigned char)gavg;
+				color.b = (unsigned char)bavg;
 				color.defined = true;
 				interpolateVec[i][j] = color;
 			}
@@ -210,8 +210,8 @@ void morphImage() {
 	}
 	for (int j = 0; j < height; j++) {
 		for (int i = 0; i < width; i++) {
-			if (i < width / 2) { //left half
-				if (j < height / 2) {//3rd quadrant
+			if (i < width / 2 + changeX) { //left half
+				if (j < height / 2 + changeY) {//3rd quadrant
 					structimageq3_new[i][j] = interpolateVec[i][j];
 				}
 				else { //2nd quadrant
@@ -219,7 +219,7 @@ void morphImage() {
 				}
 			}
 			else { //right half
-				if (j < height / 2) {//4th quadrant
+				if (j < height / 2 + changeY) {//4th quadrant
 					structimageq4_new[i][j] = interpolateVec[i][j];
 				}
 				else { //1st quadrant
