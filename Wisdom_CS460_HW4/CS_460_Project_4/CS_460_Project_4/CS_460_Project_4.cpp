@@ -13,6 +13,16 @@ int screeny = 500;
 float red = 0.0;
 float green = 0.0;
 float blue = 0.0;
+float rotater = 0;
+double eyeX = 0;
+double eyeY = 0;
+double eyeZ = 0;
+double centerX = 0;
+double centerY = 0;
+double centerZ = 0;
+double upX = 0;
+double upY = 1;
+double upZ = 0;
 
 bool start = true;
 
@@ -277,15 +287,26 @@ void structsToBits() {
 	}
 }
 
+unsigned int texture;
+void initTexture() {
+	glGenTextures(1, &texture);
+	glBindTexture(GL_TEXTURE_2D, texture);
+	//what does this do
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	// ----
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_BGR_EXT, width, height, 0, GL_BGR_EXT, GL_UNSIGNED_BYTE, image);
+}
+
 void display() {
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+	rotater += .1;
+	//Draw Scene
 	glClearColor(red, green, blue, 0);
 	glColor3f(1.0, 1.0, 1.0);
-	glBegin(GL_QUADS);
-	glVertex3f(-.5, -.5, 0);
-	glVertex3f(-.5, .5, 0);
-	glVertex3f(.5, .5, 0);
-	glVertex3f(.5, -.5, 0);
-	glEnd();
 
 	//populate "image" array
 	readBMP("flower.bmp");
@@ -293,18 +314,35 @@ void display() {
 	if(modifiedImage) morphImage();
 	structsToBits();
 	
-	glRasterPos2f(-.75, -.75);
-	glDrawPixels(width, height, GL_BGR_EXT, GL_UNSIGNED_BYTE, image);
-	//glRasterPos2f(-1, .1);
-	//glDrawPixels(width/2, height/2, GL_BGR_EXT, GL_UNSIGNED_BYTE, imageq1);
+	//draw image
+	
+	//glRasterPos2f(-.75, -.75);
+	//glDrawPixels(width, height, GL_BGR_EXT, GL_UNSIGNED_BYTE, image);
+
+	initTexture();
+	glEnable(GL_TEXTURE_2D);
+	glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
+	glBindTexture(GL_TEXTURE_2D, texture);
+
+	glBegin(GL_POLYGON);
+	glTexCoord2f(0, 0);
+	glVertex2f(0, 0);
+	glTexCoord2f(1, 0);
+	glVertex2f(0, 1);
+	glTexCoord2f(1, 1);
+	glVertex2f(1, 1);
+	glTexCoord2f(0, 1);
+	glVertex2f(1, 0);
+	glEnd();
+	glDisable(GL_TEXTURE_2D);
+
+
 	/*
-	glRasterPos2f(-0.5, 0.5);
-	glDrawPixels(width/2, height/2, GL_BGR_EXT, GL_UNSIGNED_BYTE, imageq2);
-	glRasterPos2f(-0.5, -0.5);
-	glDrawPixels(width/2, height/2, GL_BGR_EXT, GL_UNSIGNED_BYTE, imageq3);
-	glRasterPos2f(0.25, -0.5);
-	glDrawPixels(width/2, height/2, GL_BGR_EXT, GL_UNSIGNED_BYTE, imageq4);
+	glMatrixMode(GL_MODELVIEW);
+	glLoadIdentity();
+	gluLookAt(eyeX, eyeY, eyeZ, centerX, centerY, centerZ, upX, upY, upZ);
 	*/
+
 	glutPostRedisplay();
 	glFlush();
 }
