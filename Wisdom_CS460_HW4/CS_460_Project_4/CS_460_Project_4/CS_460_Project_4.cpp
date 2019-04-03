@@ -153,7 +153,6 @@ void morphImage() {
 			}
 		}
 	}
-
 	//INTERPOLATION
 	//Combine to one matrix, fill in gaps, split back
 	vector<vector<Color>> interpolateVec(width, vector<Color>(height));
@@ -186,7 +185,7 @@ void morphImage() {
 				int count = 0;
 				for (int a = -1; a <= 1; a++) {
 					for (int b = -1; b <= 1; b++) {
-						if ((a != b || b != 0) && i+a >= 0 && j+b >=0 && i+a <= 255 && j+b <= 255 && interpolateVec[i+a][j+b].defined) {
+						if (((a != b) || (b != 0)) &&(i+a >= 0 )&& (j+b >=0 )&& ((i+a) < width )&& (j+b < height) && (interpolateVec[i+a][j+b].defined)) {
 							ravg += (unsigned int)interpolateVec[i + a][j + b].r;
 							gavg += (unsigned int)interpolateVec[i + a][j + b].g;
 							bavg += (unsigned int)interpolateVec[i + a][j + b].b;
@@ -228,7 +227,6 @@ void morphImage() {
 			}
 		}
 	}
-
 	structimageq1 = structimageq1_new;
 	structimageq2 = structimageq2_new;
 	structimageq3 = structimageq3_new;
@@ -314,7 +312,6 @@ void display() {
 void mouseHandler(int button, int state, int x, int y) {
 	if (button == GLUT_LEFT_BUTTON && state == GLUT_DOWN) {
 		if (!mouseCurrentlyDown) {
-			cout << "here" << endl;
 			initialMouseX = x;
 			initialMouseY = y;
 			mouseCurrentlyDown = true;
