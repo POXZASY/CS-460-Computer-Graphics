@@ -4,6 +4,8 @@
 #include <vector>
 #include <fstream>
 #include <math.h>
+#include <glm/vec3.hpp>
+#include <glm/vec2.hpp>
 
 #ifndef GL_BGR
 #define GL_BGR 0x80E0
@@ -28,6 +30,10 @@ double upX = 0;
 double upY = 1;
 double upZ = 0;
 
+bool flower = true;
+bool teacup = false;
+bool cube = false;
+
 bool start = true;
 
 bool mouseCurrentlyDown = false;
@@ -42,34 +48,31 @@ const int height = 256;
 
 unsigned char image[width * height * 3];
 
-/*
+void processMenu(int option) {
+	if (option == 1) {
+		flower = true;
+		teacup = false;
+		cube = false;
+	}
+	else if (option == 2) {
+		flower = false;
+		teacup = true;
+		cube = false;
+	}
+	else if (option == 3) {
+		flower = false;
+		teacup = false;
+		cube = true;
+	}
+}
+
 void createMenu() {
-	//Roll
-	int rollmenu = glutCreateMenu(flowerMenu);
-	glutAddMenuEntry("Add", 1);
-	glutAddMenuEntry("Subtract", 2);
-	//Pitch
-	int pitchmenu = glutCreateMenu(teapotMenu);
-	glutAddMenuEntry("Add", 1);
-	glutAddMenuEntry("Subtract", 2);
-	//Yaw
-	int yawmenu = glutCreateMenu(yawMenu);
-	glutAddMenuEntry("Add", 1);
-	glutAddMenuEntry("Subtract", 2);
-	//Slide
-	int slidemenu = glutCreateMenu(slideMenu);
-	glutAddMenuEntry("Add", 1);
-	glutAddMenuEntry("Subtract", 2);
-	//Main Menu
 	int menu = glutCreateMenu(processMenu);
-	glutAddSubMenu("Roll", rollmenu);
-	glutAddSubMenu("Pitch", pitchmenu);
-	glutAddSubMenu("Yaw", yawmenu);
-	glutAddSubMenu("Slide", slidemenu);
-	glutAddMenuEntry("Lever Rotation", 1);
+	glutAddMenuEntry("Flower", 1);
+	glutAddMenuEntry("Teacup", 2);
+	glutAddMenuEntry("Cube", 3);
 	glutAttachMenu(GLUT_RIGHT_BUTTON);
 }
-*/
 
 void readBMP(const char * filename) {
 	FILE* img = fopen(filename, "rb");
@@ -318,69 +321,137 @@ void structsToBits() {
 	}
 }
 
+bool loadObj(const char * path, vector < glm::vec3 > & out_vertices, vector < glm::vec2 > & out_uvs, vector < glm::vec3 > & out_normals) {
+	vector< unsigned int > vertexIndices, uvIndices, normalIndices;
+	vector< glm::vec3 > temp_vertices;
+	vector< glm::vec2 > temp_uvs;
+	vector< glm::vec3 > temp_normals;
+	FILE * file = fopen(path, "r");
+	while (1) {
+		char lineHeader[128];
+		// read the first word of the line
+		int res = fscanf(file, "%s", lineHeader);
+		if (res == EOF)
+			break; // EOF = End Of File. Quit the loop.
+
+		// else : parse lineHeader
+		if (strcmp(lineHeader, "v") == 0) {
+			glm::vec3 vertex;
+			fscanf(file, "%f %f %f\n", &vertex.x, &vertex.y, &vertex.z);
+			temp_vertices.push_back(vertex);
+		}
+		else if (strcmp(lineHeader, "vt") == 0) {
+			glm::vec2 uv;
+			fscanf(file, "%f %f\n", &uv.x, &uv.y);
+			temp_uvs.push_back(uv);
+
+
+
+		}
+		else if (strcmp(lineHeader, "vn") == 0) {
+			glm::vec3 normal;
+			fscanf(file, "%f %f %f\n", &normal.x, &normal.y, &normal.z);
+			temp_normals.push_back(normal);
+		}
+		else if (strcmp(lineHeader, "f") == 0) {
+			std::string vertex1, vertex2, vertex3;
+			unsigned int vertexIndex[3], uvIndex[3], normalIndex[3];
+			int matches = fscanf(file, "%d/%d/%d %d/%d/%d %d/%d/%d\n", &vertexIndex[0], &uvIndex[0], &normalIndex[0], &vertexIndex[1], &uvIndex[1], &normalIndex[1], &vertexIndex[2], &uvIndex[2], &normalIndex[2]);
+			if (matches != 9) {
+				printf("File can't be read by our simple parser : ( Try exporting with other options\n");
+				return false;
+			}
+			vertexIndices.push_back(vertexIndex[0]);
+			vertexIndices.push_back(vertexIndex[1]);
+			vertexIndices.push_back(vertexIndex[2]);
+			uvIndices.push_back(uvIndex[0]);
+			uvIndices.push_back(uvIndex[1]);
+			uvIndices.push_back(uvIndex[2]);
+			normalIndices.push_back(normalIndex[0]);
+			normalIndices.push_back(normalIndex[1]);
+			normalIndices.push_back(normalIndex[2]);
+		}
+	}
+	
+
+		// For each vertex of each triangle
+	for (unsigned int i = 0; i < vertexIndices.size(); i++) {
+		unsigned int vertexIndex = vertexIndices[i];
+		glm::vec3 vertex = temp_vertices[vertexIndex - 1];
+		out_vertices.push_back(vertex);
+		// Read our .obj file
+		
+	}
+}
+
 void display() {
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-	//Rotate camera
-	if(rotating) rotater += .25;
-	glMatrixMode(GL_MODELVIEW);
-	glLoadIdentity();
-	glRotatef(rotater, 0, 0, 1);
-	//gluLookAt(eyeX, eyeY, eyeZ, centerX, centerY, centerZ, upX, upY, upZ);
+	if (flower) {
+		//Rotate camera
+		if (rotating) rotater += .25;
+		glMatrixMode(GL_MODELVIEW);
+		glLoadIdentity();
+		glRotatef(rotater, 0, 0, 1);
+		//gluLookAt(eyeX, eyeY, eyeZ, centerX, centerY, centerZ, upX, upY, upZ);
 
 
-	//Draw Scene
-	glClearColor(red, green, blue, 0);
-	glColor3f(1.0, 1.0, 1.0);
+		//Draw Scene
+		glClearColor(red, green, blue, 0);
+		glColor3f(1.0, 1.0, 1.0);
 
-	//populate "image" array
-	readBMP("flower.bmp");
-	bitsToStructs();
-	if(modifiedImage) morphImage();
-	structsToBits();
-	
-	//draw image
-	GLuint texName;
+		//populate "image" array
+		readBMP("flower.bmp");
+		bitsToStructs();
+		if (modifiedImage) morphImage();
+		structsToBits();
 
-	glClearColor(0.0, 0.0, 0.0, 0.0);
-	glShadeModel(GL_FLAT);
-	glEnable(GL_DEPTH_TEST);
+		//draw image
+		GLuint texName;
 
-	glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+		glClearColor(0.0, 0.0, 0.0, 0.0);
+		glShadeModel(GL_FLAT);
+		glEnable(GL_DEPTH_TEST);
 
-	glGenTextures(1, &texName);
-	glBindTexture(GL_TEXTURE_2D, texName);
+		glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER,
-		GL_NEAREST);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER,
-		GL_NEAREST);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width,
-		height, 0, GL_BGR, GL_UNSIGNED_BYTE,
-		image);
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-	glEnable(GL_TEXTURE_2D);
-	glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_DECAL);
-	glBindTexture(GL_TEXTURE_2D, texName);
-	glBegin(GL_QUADS);
-	glTexCoord2f(0.0, 0.0); glVertex3f(-.75, -.5, 0.0);
-	glTexCoord2f(0.0, 1.0); glVertex3f(-.75, .5, 0.0);
-	glTexCoord2f(1.0, 1.0); glVertex3f(.75, .5, 0.0);
-	glTexCoord2f(1.0, 0.0); glVertex3f(.75, -.5, 0.0);
-	glEnd();
-	glFlush();
-	glDisable(GL_TEXTURE_2D);
-		
+		glGenTextures(1, &texName);
+		glBindTexture(GL_TEXTURE_2D, texName);
 
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER,
+			GL_NEAREST);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER,
+			GL_NEAREST);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width,
+			height, 0, GL_BGR, GL_UNSIGNED_BYTE,
+			image);
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+		glEnable(GL_TEXTURE_2D);
+		glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_DECAL);
+		glBindTexture(GL_TEXTURE_2D, texName);
+		glBegin(GL_QUADS);
+		glTexCoord2f(0.0, 0.0); glVertex3f(-.75, -.5, 0.0);
+		glTexCoord2f(0.0, 1.0); glVertex3f(-.75, .5, 0.0);
+		glTexCoord2f(1.0, 1.0); glVertex3f(.75, .5, 0.0);
+		glTexCoord2f(1.0, 0.0); glVertex3f(.75, -.5, 0.0);
+		glEnd();
+		glFlush();
+		glDisable(GL_TEXTURE_2D);
+	}
+	else if(teacup){
+		/*
+		std::vector< glm::vec3 > vertices;
+		std::vector< glm::vec2 > uvs;
+		std::vector< glm::vec3 > normals; // Won't be used at the moment.
+		bool res = loadObj("teapot.obj", vertices, uvs, normals);
+		glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(glm::vec3), &vertices[0], GL_STATIC_DRAW);
+		*/
+	}
+	else if (cube) {
 
-
-
-
-
-	
-
+	}
 	glutPostRedisplay();
 	glFlush();
 }
@@ -427,8 +498,8 @@ int main(int argc, char** argv){
 	glutMouseFunc(mouseHandler);
 	glutMotionFunc(mousePos);
 	glutKeyboardFunc(keyboardHandler);
+	createMenu();
 	glutMainLoop();
 	return 0;
 }
-
 #endif
