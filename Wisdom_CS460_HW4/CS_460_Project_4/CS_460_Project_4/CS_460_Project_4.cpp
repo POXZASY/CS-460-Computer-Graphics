@@ -5,6 +5,9 @@
 #include <fstream>
 #include <math.h>
 
+#ifndef GL_BGR
+#define GL_BGR 0x80E0
+
 using namespace std;
 
 int screenx = 500;
@@ -13,6 +16,7 @@ int screeny = 500;
 float red = 0.0;
 float green = 0.0;
 float blue = 0.0;
+bool rotating = false;
 float rotater = 0;
 double eyeX = 0;
 double eyeY = 0;
@@ -38,6 +42,34 @@ const int height = 256;
 
 unsigned char image[width * height * 3];
 
+/*
+void createMenu() {
+	//Roll
+	int rollmenu = glutCreateMenu(flowerMenu);
+	glutAddMenuEntry("Add", 1);
+	glutAddMenuEntry("Subtract", 2);
+	//Pitch
+	int pitchmenu = glutCreateMenu(teapotMenu);
+	glutAddMenuEntry("Add", 1);
+	glutAddMenuEntry("Subtract", 2);
+	//Yaw
+	int yawmenu = glutCreateMenu(yawMenu);
+	glutAddMenuEntry("Add", 1);
+	glutAddMenuEntry("Subtract", 2);
+	//Slide
+	int slidemenu = glutCreateMenu(slideMenu);
+	glutAddMenuEntry("Add", 1);
+	glutAddMenuEntry("Subtract", 2);
+	//Main Menu
+	int menu = glutCreateMenu(processMenu);
+	glutAddSubMenu("Roll", rollmenu);
+	glutAddSubMenu("Pitch", pitchmenu);
+	glutAddSubMenu("Yaw", yawmenu);
+	glutAddSubMenu("Slide", slidemenu);
+	glutAddMenuEntry("Lever Rotation", 1);
+	glutAttachMenu(GLUT_RIGHT_BUTTON);
+}
+*/
 
 void readBMP(const char * filename) {
 	FILE* img = fopen(filename, "rb");
@@ -51,7 +83,6 @@ void readBMP(const char * filename) {
 
 	fread(image, sizeof(unsigned char), width*height*3, img);
 	fclose(img);
-	
 }
 
 struct Color {
@@ -287,23 +318,17 @@ void structsToBits() {
 	}
 }
 
-unsigned int texture;
-void initTexture() {
-	glGenTextures(1, &texture);
-	glBindTexture(GL_TEXTURE_2D, texture);
-	//what does this do
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	// ----
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_BGR_EXT, width, height, 0, GL_BGR_EXT, GL_UNSIGNED_BYTE, image);
-}
-
 void display() {
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-	rotater += .1;
+	//Rotate camera
+	if(rotating) rotater += .25;
+	glMatrixMode(GL_MODELVIEW);
+	glLoadIdentity();
+	glRotatef(rotater, 0, 0, 1);
+	//gluLookAt(eyeX, eyeY, eyeZ, centerX, centerY, centerZ, upX, upY, upZ);
+
+
 	//Draw Scene
 	glClearColor(red, green, blue, 0);
 	glColor3f(1.0, 1.0, 1.0);
@@ -315,33 +340,46 @@ void display() {
 	structsToBits();
 	
 	//draw image
-	
-	//glRasterPos2f(-.75, -.75);
-	//glDrawPixels(width, height, GL_BGR_EXT, GL_UNSIGNED_BYTE, image);
+	GLuint texName;
 
-	initTexture();
+	glClearColor(0.0, 0.0, 0.0, 0.0);
+	glShadeModel(GL_FLAT);
+	glEnable(GL_DEPTH_TEST);
+
+	glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+
+	glGenTextures(1, &texName);
+	glBindTexture(GL_TEXTURE_2D, texName);
+
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER,
+		GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER,
+		GL_NEAREST);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width,
+		height, 0, GL_BGR, GL_UNSIGNED_BYTE,
+		image);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	glEnable(GL_TEXTURE_2D);
-	glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
-	glBindTexture(GL_TEXTURE_2D, texture);
-
-	glBegin(GL_POLYGON);
-	glTexCoord2f(0, 0);
-	glVertex2f(0, 0);
-	glTexCoord2f(1, 0);
-	glVertex2f(0, 1);
-	glTexCoord2f(1, 1);
-	glVertex2f(1, 1);
-	glTexCoord2f(0, 1);
-	glVertex2f(1, 0);
+	glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_DECAL);
+	glBindTexture(GL_TEXTURE_2D, texName);
+	glBegin(GL_QUADS);
+	glTexCoord2f(0.0, 0.0); glVertex3f(-.75, -.5, 0.0);
+	glTexCoord2f(0.0, 1.0); glVertex3f(-.75, .5, 0.0);
+	glTexCoord2f(1.0, 1.0); glVertex3f(.75, .5, 0.0);
+	glTexCoord2f(1.0, 0.0); glVertex3f(.75, -.5, 0.0);
 	glEnd();
+	glFlush();
 	glDisable(GL_TEXTURE_2D);
+		
 
 
-	/*
-	glMatrixMode(GL_MODELVIEW);
-	glLoadIdentity();
-	gluLookAt(eyeX, eyeY, eyeZ, centerX, centerY, centerZ, upX, upY, upZ);
-	*/
+
+
+
+
+	
 
 	glutPostRedisplay();
 	glFlush();
@@ -373,6 +411,12 @@ void mousePos(int x, int y) {
 	}
 }
 
+void keyboardHandler(unsigned char key, int x, int y) {
+	if (key == 'R' || key == 'r') {
+		rotating = !rotating;
+	}
+}
+
 int main(int argc, char** argv){
 	glutInit(&argc, argv);
 	glutInitWindowSize(screenx, screeny);
@@ -382,7 +426,9 @@ int main(int argc, char** argv){
 	glutDisplayFunc(display);
 	glutMouseFunc(mouseHandler);
 	glutMotionFunc(mousePos);
-	//glutKeyboardFunc(keyboardHandler);
+	glutKeyboardFunc(keyboardHandler);
 	glutMainLoop();
 	return 0;
 }
+
+#endif
