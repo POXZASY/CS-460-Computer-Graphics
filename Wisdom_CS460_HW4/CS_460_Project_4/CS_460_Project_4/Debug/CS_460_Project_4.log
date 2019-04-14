@@ -1,2 +1,5 @@
 ﻿  CS_460_Project_4.cpp
-  CS_460_Project_4.vcxproj -> C:\Users\Larkin\Documents\CS_460\Wisdom_CS460_HW4\CS_460_Project_4\Debug\CS_460_Project_4.exe
+c:\users\larkin\documents\cs_460\wisdom_cs460_hw4\cs_460_project_4\cs_460_project_4\cs_460_project_4.cpp(2): warning C4603: 'GL_GLEXT_PROTOTYPES': macro is not defined or definition is different after precompiled header use
+  c:\users\larkin\documents\cs_460\wisdom_cs460_hw4\cs_460_project_4\cs_460_project_4\cs_460_project_4.cpp(2): note: Add macro to precompiled header instead of defining here
+  c:\users\larkin\documents\cs_460\wisdom_cs460_hw4\cs_460_project_4\cs_460_project_4\cs_460_project_4.cpp(3): note: use of precompiled header
+c:\users\larkin\documents\cs_460\wisdom_cs460_hw4\cs_460_project_4\cs_460_project_4\cs_460_project_4.cpp(11): fatal error C1083: Cannot open include file: 'glm/vec3.hpp': No such file or directory

@@ -1,11 +1,19 @@
+#include <Windows.h>
+#define GL_GLEXT_PROTOTYPES
 #include "pch.h"
 #include <iostream>
+//#include <GL/glew.h>
+//#include <GL/glxew.h>
 #include "GL/glut.h"
 #include <vector>
 #include <fstream>
 #include <math.h>
 #include <glm/vec3.hpp>
 #include <glm/vec2.hpp>
+
+
+//#include <glext.h>
+//#include <KHR/khrplatform.h>
 
 #ifndef GL_BGR
 #define GL_BGR 0x80E0
@@ -31,7 +39,7 @@ double upY = 1;
 double upZ = 0;
 
 bool flower = true;
-bool teacup = false;
+bool useteacup = false;
 bool cube = false;
 
 bool start = true;
@@ -50,18 +58,20 @@ unsigned char image[width * height * 3];
 
 void processMenu(int option) {
 	if (option == 1) {
+		changeX = 0;
+		changeY = 0;
 		flower = true;
-		teacup = false;
+		useteacup = false;
 		cube = false;
 	}
 	else if (option == 2) {
 		flower = false;
-		teacup = true;
+		useteacup = true;
 		cube = false;
 	}
 	else if (option == 3) {
 		flower = false;
-		teacup = false;
+		useteacup = false;
 		cube = true;
 	}
 }
@@ -321,67 +331,54 @@ void structsToBits() {
 	}
 }
 
-bool loadObj(const char * path, vector < glm::vec3 > & out_vertices, vector < glm::vec2 > & out_uvs, vector < glm::vec3 > & out_normals) {
-	vector< unsigned int > vertexIndices, uvIndices, normalIndices;
-	vector< glm::vec3 > temp_vertices;
-	vector< glm::vec2 > temp_uvs;
-	vector< glm::vec3 > temp_normals;
-	FILE * file = fopen(path, "r");
-	while (1) {
-		char lineHeader[128];
-		// read the first word of the line
-		int res = fscanf(file, "%s", lineHeader);
-		if (res == EOF)
-			break; // EOF = End Of File. Quit the loop.
 
-		// else : parse lineHeader
-		if (strcmp(lineHeader, "v") == 0) {
-			glm::vec3 vertex;
-			fscanf(file, "%f %f %f\n", &vertex.x, &vertex.y, &vertex.z);
-			temp_vertices.push_back(vertex);
-		}
-		else if (strcmp(lineHeader, "vt") == 0) {
-			glm::vec2 uv;
-			fscanf(file, "%f %f\n", &uv.x, &uv.y);
-			temp_uvs.push_back(uv);
+//Draw teapot here
 
+GLuint teapot;
+char ch = '1';
 
-
-		}
-		else if (strcmp(lineHeader, "vn") == 0) {
-			glm::vec3 normal;
-			fscanf(file, "%f %f %f\n", &normal.x, &normal.y, &normal.z);
-			temp_normals.push_back(normal);
-		}
-		else if (strcmp(lineHeader, "f") == 0) {
-			std::string vertex1, vertex2, vertex3;
-			unsigned int vertexIndex[3], uvIndex[3], normalIndex[3];
-			int matches = fscanf(file, "%d/%d/%d %d/%d/%d %d/%d/%d\n", &vertexIndex[0], &uvIndex[0], &normalIndex[0], &vertexIndex[1], &uvIndex[1], &normalIndex[1], &vertexIndex[2], &uvIndex[2], &normalIndex[2]);
-			if (matches != 9) {
-				printf("File can't be read by our simple parser : ( Try exporting with other options\n");
-				return false;
+void loadObj(const char *fname){
+	FILE *fp;
+	int read;
+	GLfloat x, y, z;
+	char ch;
+	teapot = glGenLists(1);
+	fp = fopen(fname, "r");
+	glPointSize(2.0);
+	glNewList(teapot, GL_COMPILE);
+	{
+		glPushMatrix();
+		glBegin(GL_POINTS);
+		while (!(feof(fp)))
+		{
+			read = fscanf(fp, "%c %f %f %f", &ch, &x, &y, &z);
+			if (read == 4 && ch == 'v')
+			{
+				glVertex3f(x, y, z);
 			}
-			vertexIndices.push_back(vertexIndex[0]);
-			vertexIndices.push_back(vertexIndex[1]);
-			vertexIndices.push_back(vertexIndex[2]);
-			uvIndices.push_back(uvIndex[0]);
-			uvIndices.push_back(uvIndex[1]);
-			uvIndices.push_back(uvIndex[2]);
-			normalIndices.push_back(normalIndex[0]);
-			normalIndices.push_back(normalIndex[1]);
-			normalIndices.push_back(normalIndex[2]);
 		}
+		glEnd();
 	}
-	
-
-		// For each vertex of each triangle
-	for (unsigned int i = 0; i < vertexIndices.size(); i++) {
-		unsigned int vertexIndex = vertexIndices[i];
-		glm::vec3 vertex = temp_vertices[vertexIndex - 1];
-		out_vertices.push_back(vertex);
-		// Read our .obj file
-		
-	}
+	glPopMatrix();
+	glEndList();
+	fclose(fp);
+}
+void reshape(int w, int h){
+	glViewport(0, 0, w, h);
+	glMatrixMode(GL_PROJECTION);
+	glLoadIdentity();
+	gluPerspective(60, (GLfloat)w / (GLfloat)h, 0.1, 1000.0);
+	glMatrixMode(GL_MODELVIEW);
+}
+void drawTeapot(){
+	glPushMatrix();
+	glTranslatef(0, -0.25, 0);
+	glColor3f(1, 1, 1);
+	glScalef(0.1, 0.1, 0.1);
+	glRotatef(changeX*.001, 0, 1, 0);
+	glRotatef(changeY*.001, 1, 0, 0);
+	glCallList(teapot);
+	glPopMatrix();
 }
 
 void display() {
@@ -440,17 +437,82 @@ void display() {
 		glFlush();
 		glDisable(GL_TEXTURE_2D);
 	}
-	else if(teacup){
-		/*
-		std::vector< glm::vec3 > vertices;
-		std::vector< glm::vec2 > uvs;
-		std::vector< glm::vec3 > normals; // Won't be used at the moment.
-		bool res = loadObj("teapot.obj", vertices, uvs, normals);
-		glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(glm::vec3), &vertices[0], GL_STATIC_DRAW);
-		*/
+	else if(useteacup){
+		glLoadIdentity();
+		drawTeapot();
+		glutSwapBuffers();
 	}
 	else if (cube) {
+		glMatrixMode(GL_PROJECTION);
+		glLoadIdentity();
+		gluPerspective(90, 1, 0.1, 1000.0);
+		gluLookAt(1, 0, 1, 0, 0, 0, 0, 1, 0);
+		glMatrixMode(GL_MODELVIEW);
+		glLoadIdentity();
+		glTranslatef(-.5, -.5, -1);
+		glRotatef(changeX*.001, 0, 1, 0);
+		glRotatef(changeY*.001, 1, 0, 0);
+		readBMP("flower.bmp");
+		//draw image
+		GLuint texName;
 
+		glClearColor(0.0, 0.0, 0.0, 0.0);
+		glShadeModel(GL_FLAT);
+		glEnable(GL_DEPTH_TEST);
+
+		glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+
+		glGenTextures(1, &texName);
+		glBindTexture(GL_TEXTURE_2D, texName);
+
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER,
+			GL_NEAREST);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER,
+			GL_NEAREST);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width,
+			height, 0, GL_BGR, GL_UNSIGNED_BYTE,
+			image);
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+		glEnable(GL_TEXTURE_2D);
+		glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_DECAL);
+		glBindTexture(GL_TEXTURE_2D, texName);
+		glBegin(GL_QUADS);
+		glTexCoord2f(0.0, 0.0); glVertex3f(0, 0, 0);
+		glTexCoord2f(0.0, 1.0); glVertex3f(0, 1, 0);
+		glTexCoord2f(1.0, 1.0); glVertex3f(1, 1, 0);
+		glTexCoord2f(1.0, 0.0); glVertex3f(1, 0, 0);
+
+		glTexCoord2f(0.0, 0.0); glVertex3f(0, 0, 0);
+		glTexCoord2f(0.0, 1.0); glVertex3f(0, 0, 1);
+		glTexCoord2f(1.0, 1.0); glVertex3f(1, 0, 1);
+		glTexCoord2f(1.0, 0.0); glVertex3f(1, 0, 0);
+
+		glTexCoord2f(0.0, 0.0); glVertex3f(0, 0, 0);
+		glTexCoord2f(0.0, 1.0); glVertex3f(0, 1, 0);
+		glTexCoord2f(1.0, 1.0); glVertex3f(0, 1, 1);
+		glTexCoord2f(1.0, 0.0); glVertex3f(0, 0, 1);
+
+		glTexCoord2f(0.0, 0.0); glVertex3f(1, 1, 1);
+		glTexCoord2f(0.0, 1.0); glVertex3f(1, 1, 0);
+		glTexCoord2f(1.0, 1.0); glVertex3f(1, 0, 0);
+		glTexCoord2f(1.0, 0.0); glVertex3f(1, 0, 1);
+
+		glTexCoord2f(0.0, 0.0); glVertex3f(1, 1, 1);
+		glTexCoord2f(0.0, 1.0); glVertex3f(1, 1, 0);
+		glTexCoord2f(1.0, 1.0); glVertex3f(0, 1, 0);
+		glTexCoord2f(1.0, 0.0); glVertex3f(0, 1, 1);
+
+		glTexCoord2f(0.0, 0.0); glVertex3f(1, 1, 1);
+		glTexCoord2f(0.0, 1.0); glVertex3f(0, 1, 1);
+		glTexCoord2f(1.0, 1.0); glVertex3f(0, 0, 1);
+		glTexCoord2f(1.0, 0.0); glVertex3f(1, 0, 1);
+		
+		glEnd();
+		
+		glFlush();
+		glDisable(GL_TEXTURE_2D);
 	}
 	glutPostRedisplay();
 	glFlush();
@@ -472,13 +534,20 @@ void mouseHandler(int button, int state, int x, int y) {
 
 void mousePos(int x, int y) {
 	if (mouseCurrentlyDown) {
-		changeX = x - initialMouseX;
-		if (changeX >= width / 2) changeX = (width / 2) - 1;
-		if (changeX < -width / 2) changeX = -width / 2;
-		changeY = -(y - initialMouseY);
-		if (changeY >= height / 2) changeY = (height / 2) - 1;
-		if (changeY < -height / 2) changeY = -height / 2;
-		//cout << "X: " << changeX << ", Y: " << changeY << endl;
+		if (flower) {
+			changeX = x - initialMouseX;
+			changeY = -(y - initialMouseY);
+			if (changeX >= width / 2) changeX = (width / 2) - 1;
+			if (changeX < -width / 2) changeX = -width / 2;
+			
+			if (changeY >= height / 2) changeY = (height / 2) - 1;
+			if (changeY < -height / 2) changeY = -height / 2;
+			//cout << "X: " << changeX << ", Y: " << changeY << endl;
+		}
+		else if (useteacup || cube) {
+			changeX += x - initialMouseX;
+			changeY += -(y - initialMouseY);
+		}
 	}
 }
 
@@ -499,6 +568,7 @@ int main(int argc, char** argv){
 	glutMotionFunc(mousePos);
 	glutKeyboardFunc(keyboardHandler);
 	createMenu();
+	loadObj("teapot.obj");
 	glutMainLoop();
 	return 0;
 }
