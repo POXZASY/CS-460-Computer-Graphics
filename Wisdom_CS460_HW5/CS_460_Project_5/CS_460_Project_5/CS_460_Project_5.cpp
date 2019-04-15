@@ -19,7 +19,6 @@ float lightx = 50.0;
 float lighty = 50.0;
 float lightz = 50.0; 
 
-
 struct Point {
 	float x;
 	float y;
@@ -27,38 +26,36 @@ struct Point {
 };
 vector<vector<Point>> surface(4, vector<Point>(4));
 
-
-
 void processMenu(int option) {
 	glutPostRedisplay();
 }
 
-int change = 1; //change constant
+float change = 5; //change constant
 //Control Point 1
 void cp1(int option) {
 	switch (option) {
 	case 1:
-		surface[1][1].x += 5;
+		surface[1][1].x += change;
 		glutPostRedisplay();
 		break;
 	case 2:
-		surface[1][1].x -= 5;
+		surface[1][1].x -= change;
 		glutPostRedisplay();
 		break;
 	case 3:
-		surface[1][1].y += 5;
+		surface[1][1].y += change;
 		glutPostRedisplay();
 		break;
 	case 4:
-		surface[1][1].y -= 5;
+		surface[1][1].y -= change;
 		glutPostRedisplay();
 		break;
 	case 5:
-		surface[1][1].z += 5;
+		surface[1][1].z += change;
 		glutPostRedisplay();
 		break;
 	case 6:
-		surface[1][1].z -= 5;
+		surface[1][1].z -= change;
 		glutPostRedisplay();
 		break;
 	}
@@ -67,27 +64,27 @@ void cp1(int option) {
 void cp2(int option) {
 	switch (option) {
 	case 1:
-		surface[2][1].x += 5;
+		surface[2][1].x += change;
 		glutPostRedisplay();
 		break;
 	case 2:
-		surface[2][1].x -= 5;
+		surface[2][1].x -= change;
 		glutPostRedisplay();
 		break;
 	case 3:
-		surface[2][1].y += 5;
+		surface[2][1].y += change;
 		glutPostRedisplay();
 		break;
 	case 4:
-		surface[2][1].y -= 5;
+		surface[2][1].y -= change;
 		glutPostRedisplay();
 		break;
 	case 5:
-		surface[2][1].z += 5;
+		surface[2][1].z += change;
 		glutPostRedisplay();
 		break;
 	case 6:
-		surface[2][1].z -= 5;
+		surface[2][1].z -= change;
 		glutPostRedisplay();
 		break;
 	}
@@ -96,27 +93,27 @@ void cp2(int option) {
 void cp3(int option) {
 	switch (option) {
 	case 1:
-		surface[2][2].x += 5;
+		surface[2][2].x += change;
 		glutPostRedisplay();
 		break;
 	case 2:
-		surface[2][2].x -= 5;
+		surface[2][2].x -= change;
 		glutPostRedisplay();
 		break;
 	case 3:
-		surface[2][2].y += 5;
+		surface[2][2].y += change;
 		glutPostRedisplay();
 		break;
 	case 4:
-		surface[2][2].y -= 5;
+		surface[2][2].y -= change;
 		glutPostRedisplay();
 		break;
 	case 5:
-		surface[2][2].z += 5;
+		surface[2][2].z += change;
 		glutPostRedisplay();
 		break;
 	case 6:
-		surface[2][2].z -= 5;
+		surface[2][2].z -= change;
 		glutPostRedisplay();
 		break;
 	}
@@ -125,27 +122,27 @@ void cp3(int option) {
 void cp4(int option) {
 	switch (option) {
 	case 1:
-		surface[1][2].x += 5;
+		surface[1][2].x += change;
 		glutPostRedisplay();
 		break;
 	case 2:
-		surface[1][2].x -= 5;
+		surface[1][2].x -= change;
 		glutPostRedisplay();
 		break;
 	case 3:
-		surface[1][2].y += 5;
+		surface[1][2].y += change;
 		glutPostRedisplay();
 		break;
 	case 4:
-		surface[1][2].y -= 5;
+		surface[1][2].y -= change;
 		glutPostRedisplay();
 		break;
 	case 5:
-		surface[1][2].z += 5;
+		surface[1][2].z += change;
 		glutPostRedisplay();
 		break;
 	case 6:
-		surface[1][2].z -= 5;
+		surface[1][2].z -= change;
 		glutPostRedisplay();
 		break;
 	}
@@ -227,10 +224,6 @@ void createMenu() {
 	glutAttachMenu(GLUT_RIGHT_BUTTON);
 }
 
-
-
-
-
 //Did up to 30 instead of 20 for easier rounding
 void createSurface() {
 	for (int i = 0; i <= 30; i = i + 10) {
@@ -302,13 +295,22 @@ void display() {
 	glEnd();
 	//Bezier Patch
 	glColor3f(1.0, 1.0, 1.0);
-	glBegin(GL_POINTS);
+	glBegin(GL_LINES);
 	for (float u = 0; u < 1; u = u + .05) {
 		for (float v = 0; v < 1; v = v + .05) {
-			Point p = Q(u, v);
-			glVertex3f(p.x, p.y, p.z);
+			Point p1 = Q(u, v);
+			Point p2 = Q(u, v + .05);
+			Point p3 = Q(u + .05, v);
+			glVertex3f(p1.x, p1.y, p1.z);
+			glVertex3f(p2.x, p2.y, p2.z);
+			glVertex3f(p1.x, p1.y, p1.z);
+			glVertex3f(p3.x, p3.y, p3.z);
 		}
 	}
+	glVertex3f(30, 0, 0);
+	glVertex3f(30, 0, 30);
+	glVertex3f(0, 0, 30);
+	glVertex3f(30, 0, 30);
 	glEnd();
 
 	//glutPostRedisplay();
