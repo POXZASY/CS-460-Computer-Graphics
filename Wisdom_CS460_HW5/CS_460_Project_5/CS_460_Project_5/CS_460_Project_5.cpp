@@ -1,5 +1,11 @@
 #include "pch.h"
+#include <cstdlib>
 #include "GL/glut.h"
+#include <vector>
+#include <math.h>
+
+
+using namespace std;
 
 int screenx = 500;
 int screeny = 500;
@@ -13,6 +19,16 @@ float lightx = 50.0;
 float lighty = 50.0;
 float lightz = 50.0; 
 
+
+struct Point {
+	float x;
+	float y;
+	float z;
+};
+vector<vector<Point>> surface(4, vector<Point>(4));
+
+
+
 void processMenu(int option) {
 	glutPostRedisplay();
 }
@@ -22,27 +38,27 @@ int change = 1; //change constant
 void cp1(int option) {
 	switch (option) {
 	case 1:
-		
+		surface[1][1].x += 5;
 		glutPostRedisplay();
 		break;
 	case 2:
-		
+		surface[1][1].x -= 5;
 		glutPostRedisplay();
 		break;
 	case 3:
-		
+		surface[1][1].y += 5;
 		glutPostRedisplay();
 		break;
 	case 4:
-
+		surface[1][1].y -= 5;
 		glutPostRedisplay();
 		break;
 	case 5:
-
+		surface[1][1].z += 5;
 		glutPostRedisplay();
 		break;
 	case 6:
-
+		surface[1][1].z -= 5;
 		glutPostRedisplay();
 		break;
 	}
@@ -51,11 +67,27 @@ void cp1(int option) {
 void cp2(int option) {
 	switch (option) {
 	case 1:
-		
+		surface[2][1].x += 5;
 		glutPostRedisplay();
 		break;
 	case 2:
-		
+		surface[2][1].x -= 5;
+		glutPostRedisplay();
+		break;
+	case 3:
+		surface[2][1].y += 5;
+		glutPostRedisplay();
+		break;
+	case 4:
+		surface[2][1].y -= 5;
+		glutPostRedisplay();
+		break;
+	case 5:
+		surface[2][1].z += 5;
+		glutPostRedisplay();
+		break;
+	case 6:
+		surface[2][1].z -= 5;
 		glutPostRedisplay();
 		break;
 	}
@@ -64,11 +96,27 @@ void cp2(int option) {
 void cp3(int option) {
 	switch (option) {
 	case 1:
-		
+		surface[2][2].x += 5;
 		glutPostRedisplay();
 		break;
 	case 2:
-		
+		surface[2][2].x -= 5;
+		glutPostRedisplay();
+		break;
+	case 3:
+		surface[2][2].y += 5;
+		glutPostRedisplay();
+		break;
+	case 4:
+		surface[2][2].y -= 5;
+		glutPostRedisplay();
+		break;
+	case 5:
+		surface[2][2].z += 5;
+		glutPostRedisplay();
+		break;
+	case 6:
+		surface[2][2].z -= 5;
 		glutPostRedisplay();
 		break;
 	}
@@ -77,11 +125,27 @@ void cp3(int option) {
 void cp4(int option) {
 	switch (option) {
 	case 1:
-		
+		surface[1][2].x += 5;
 		glutPostRedisplay();
 		break;
 	case 2:
-		
+		surface[1][2].x -= 5;
+		glutPostRedisplay();
+		break;
+	case 3:
+		surface[1][2].y += 5;
+		glutPostRedisplay();
+		break;
+	case 4:
+		surface[1][2].y -= 5;
+		glutPostRedisplay();
+		break;
+	case 5:
+		surface[1][2].z += 5;
+		glutPostRedisplay();
+		break;
+	case 6:
+		surface[1][2].z -= 5;
 		glutPostRedisplay();
 		break;
 	}
@@ -163,6 +227,48 @@ void createMenu() {
 	glutAttachMenu(GLUT_RIGHT_BUTTON);
 }
 
+
+
+
+
+//Did up to 30 instead of 20 for easier rounding
+void createSurface() {
+	for (int i = 0; i <= 30; i = i + 10) {
+		for (int j = 0; j <= 30; j = j + 10) {
+			Point p;
+			p.x = i;
+			p.y = 0;
+			p.z = j;
+			surface[i/10][j/10] = p;
+		}
+	}
+}
+
+//https:// web.cs.wpi.edu/~matt/courses/cs563/talks/surface/bez_surf.html for the theory
+float B(int i, float u) {
+	if (i == 0) return pow(1 - u, 3);
+	if (i == 1) return 3 * u*pow(1 - u, 2);
+	if (i == 2) return 3 * pow(u, 2)*(1 - u);
+	if (i == 3) return pow(u, 3);
+}
+Point Q(float u, float v) {
+	float totalx = 0;
+	float totaly = 0;
+	float totalz = 0;
+	for (int i = 0; i < 4; i++) {
+		for (int j = 0; j < 4; j++) {
+			totalx += surface[i][j].x * B(i, u) * B(j, v);
+			totaly += surface[i][j].y * B(i, u) * B(j, v);
+			totalz += surface[i][j].z * B(i, u) * B(j, v);
+		}
+	}
+	Point p;
+	p.x = totalx;
+	p.y = totaly;
+	p.z = totalz;
+	return p;
+}
+
 void display() {
 	glClearColor(red, green, blue, 0.0);
 	glClear(GL_COLOR_BUFFER_BIT);
@@ -194,18 +300,18 @@ void display() {
 	glVertex3f(0.0, 0.0, -100.0);
 	glVertex3f(0.0, 0.0, 100.0);
 	glEnd();
-	//Control Points
+	//Bezier Patch
 	glColor3f(1.0, 1.0, 1.0);
 	glBegin(GL_POINTS);
-	for (float i = 0.0; i < 4; i++) {
-		for (float j = 0.0; j < 4; j++) {
-			glVertex3f(20*i, 0.0, 20*j);
+	for (float u = 0; u < 1; u = u + .05) {
+		for (float v = 0; v < 1; v = v + .05) {
+			Point p = Q(u, v);
+			glVertex3f(p.x, p.y, p.z);
 		}
 	}
 	glEnd();
 
-
-	glutPostRedisplay();
+	//glutPostRedisplay();
 	glFlush();
 }
 
@@ -219,6 +325,7 @@ int main(int argc, char** argv) {
 	//glutMouseFunc(mouseHandler);
 	//glutKeyboardFunc(keyboardHandler);
 	createMenu();
+	createSurface(); //initialize the surface
 	glutMainLoop();
 	return 0;
 }
