@@ -4,6 +4,7 @@
 #include <vector>
 #include <math.h>
 
+#define PI 3.14159265358979323846264338327950288419716939937510
 
 using namespace std;
 
@@ -262,6 +263,40 @@ Point Q(float u, float v) {
 	return p;
 }
 
+Point crossProduct(Point v1, Point v2) {
+	//determinant
+	Point retVal;
+	retVal.x = v1.y*v2.z - v1.z*v2.y;
+	retVal.y = -(v1.x*v2.z - v1.z*v2.x);
+	retVal.z = v1.x*v2.y - v1.y*v2.x;
+	return retVal;
+}
+
+float dotProduct(Point u, Point v) {
+	return u.x*v.x + u.y*v.y + u.z*v.z;
+}
+float vectorLength(Point u) {
+	return sqrt(pow(u.x, 2)+pow(u.y, 2)+ pow(u.z, 2));
+}
+
+bool visible(Point a, Point b, Point c) {
+	Point v1;
+	v1.x = b.x - a.x;
+	v1.y = b.y - a.y;
+	v1.z = b.z - a.z;
+	Point v2;
+	v2.x = c.x - a.x;
+	v2.y = c.y - a.y;
+	v2.z = c.z - a.z;
+	Point norm = crossProduct(v1, v2);
+	Point view;
+	view.x = xloc;
+	view.y = yloc;
+	view.z = zloc;
+	double angle = acos(dotProduct(view, norm)/(vectorLength(view)*vectorLength(norm)));
+	return angle < PI / 2;
+}
+
 void display() {
 	glClearColor(red, green, blue, 0.0);
 	glClear(GL_COLOR_BUFFER_BIT);
@@ -295,22 +330,26 @@ void display() {
 	glEnd();
 	//Bezier Patch
 	glColor3f(1.0, 1.0, 1.0);
-	glBegin(GL_LINES);
+	glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+	glBegin(GL_TRIANGLES);
 	for (float u = 0; u < 1; u = u + .05) {
 		for (float v = 0; v < 1; v = v + .05) {
 			Point p1 = Q(u, v);
 			Point p2 = Q(u, v + .05);
-			Point p3 = Q(u + .05, v);
-			glVertex3f(p1.x, p1.y, p1.z);
-			glVertex3f(p2.x, p2.y, p2.z);
-			glVertex3f(p1.x, p1.y, p1.z);
-			glVertex3f(p3.x, p3.y, p3.z);
+			Point p3 = Q(u + .05, v + .05);
+			Point p4 = Q(u + .05, v);
+			if (visible(p1, p2, p4)) {
+				glVertex3f(p1.x, p1.y, p1.z);
+				glVertex3f(p2.x, p2.y, p2.z);
+				glVertex3f(p4.x, p4.y, p4.z);
+			}
+			if (visible(p2, p3, p4)) {
+				glVertex3f(p2.x, p2.y, p2.z);
+				glVertex3f(p3.x, p3.y, p3.z);
+				glVertex3f(p4.x, p4.y, p4.z);
+			}
 		}
 	}
-	glVertex3f(30, 0, 0);
-	glVertex3f(30, 0, 30);
-	glVertex3f(0, 0, 30);
-	glVertex3f(30, 0, 30);
 	glEnd();
 
 	//glutPostRedisplay();
