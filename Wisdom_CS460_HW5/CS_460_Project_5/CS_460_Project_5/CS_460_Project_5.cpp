@@ -18,7 +18,9 @@ int yloc = 45;
 int zloc = 45;
 float lightx = 50.0;
 float lighty = 50.0;
-float lightz = 50.0; 
+float lightz = 50.0;
+bool useWireframe = true;
+bool flatLighting = true;
 
 struct Point {
 	float x;
@@ -28,10 +30,16 @@ struct Point {
 vector<vector<Point>> surface(4, vector<Point>(4));
 
 void processMenu(int option) {
+	switch (option) {
+	case 1:
+		useWireframe = !useWireframe;
+	case 2:
+		flatLighting = !flatLighting;
+	}
 	glutPostRedisplay();
 }
 
-float change = 5; //change constant
+float change = 30; //change constant
 //Control Point 1
 void cp1(int option) {
 	switch (option) {
@@ -222,6 +230,8 @@ void createMenu() {
 	glutAddSubMenu("Control Point 4", menu4);
 	glutAddSubMenu("Zoom", zoom);
 	glutAddSubMenu("Light Shift", light);
+	glutAddMenuEntry("Surface", 1);
+	glutAddMenuEntry("Flat/Smooth Shading", 2);
 	glutAttachMenu(GLUT_RIGHT_BUTTON);
 }
 
@@ -279,7 +289,7 @@ float vectorLength(Point u) {
 	return sqrt(pow(u.x, 2)+pow(u.y, 2)+ pow(u.z, 2));
 }
 
-bool visible(Point a, Point b, Point c) {
+Point normalVec(Point a, Point b, Point c) {
 	Point v1;
 	v1.x = b.x - a.x;
 	v1.y = b.y - a.y;
@@ -288,7 +298,11 @@ bool visible(Point a, Point b, Point c) {
 	v2.x = c.x - a.x;
 	v2.y = c.y - a.y;
 	v2.z = c.z - a.z;
-	Point norm = crossProduct(v1, v2);
+	return crossProduct(v1, v2);
+}
+
+bool visible(Point a, Point b, Point c) {
+	Point norm = normalVec(a, b, c);
 	Point view;
 	view.x = xloc;
 	view.y = yloc;
@@ -297,22 +311,22 @@ bool visible(Point a, Point b, Point c) {
 	return angle < PI / 2;
 }
 
+
 void display() {
 	glClearColor(red, green, blue, 0.0);
 	glClear(GL_COLOR_BUFFER_BIT);
+	glMatrixMode(GL_MODELVIEW);
+	glLoadIdentity();
+	glEnable(GL_NORMALIZE);
 
 	glViewport(0, 0, screenx, screeny);
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
 	gluPerspective(60, ((float)screenx / screeny), 0.01, 500);
 	gluLookAt(xloc, yloc, zloc, 0, 0, 0, 0, 1, 0);
-	/*
-	//Lighting
-	GLfloat lightpos[] = {lightx, lighty, lightz, 0};
-	glLightfv(GL_LIGHT0, GL_POSITION, lightpos);
-	glEnable(GL_LIGHTING);
-	glEnable(GL_LIGHT0);
-	*/
+	
+	
+
 	//Axes
 	glBegin(GL_LINES);
 	//Red x-axis
@@ -328,10 +342,15 @@ void display() {
 	glVertex3f(0.0, 0.0, -100.0);
 	glVertex3f(0.0, 0.0, 100.0);
 	glEnd();
+
+	
 	//Bezier Patch
-	glColor3f(1.0, 1.0, 1.0);
-	glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+	
+	if(useWireframe) glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+	else glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+	
 	glBegin(GL_TRIANGLES);
+	glColor3f(1.0, 0.0, 1.0);
 	for (float u = 0; u < 1; u = u + .05) {
 		for (float v = 0; v < 1; v = v + .05) {
 			Point p1 = Q(u, v);
@@ -339,20 +358,53 @@ void display() {
 			Point p3 = Q(u + .05, v + .05);
 			Point p4 = Q(u + .05, v);
 			if (visible(p1, p2, p4)) {
+				Point norm = normalVec(p1, p2, p4);
+				glNormal3f(norm.x, norm.y, norm.z);
 				glVertex3f(p1.x, p1.y, p1.z);
+				glNormal3f(norm.x, norm.y, norm.z);
 				glVertex3f(p2.x, p2.y, p2.z);
+				glNormal3f(norm.x, norm.y, norm.z);
 				glVertex3f(p4.x, p4.y, p4.z);
 			}
 			if (visible(p2, p3, p4)) {
+				Point norm = normalVec(p2, p3, p4);
+				glNormal3f(norm.x, norm.y, norm.z);
 				glVertex3f(p2.x, p2.y, p2.z);
+				glNormal3f(norm.x, norm.y, norm.z);
 				glVertex3f(p3.x, p3.y, p3.z);
+				glNormal3f(norm.x, norm.y, norm.z);
 				glVertex3f(p4.x, p4.y, p4.z);
 			}
 		}
 	}
 	glEnd();
 
-	//glutPostRedisplay();
+	
+	//Lighting
+	if (flatLighting) glShadeModel(GL_FLAT);
+	else glShadeModel(GL_SMOOTH);
+
+	////////////////
+
+	GLfloat light_ambient[] = { 0.1, 0.1, 0.1, 1.0 };
+	GLfloat light_diffuse[] = { 0.7, 0.7, 0.7, 1.0 };
+	GLfloat light_specular[] = { 0.4, 0.4, 0.4, 1.0 };
+	GLfloat light_position[] = { lightx, lighty, lightz, 1.0 };
+
+	glLightfv(GL_LIGHT0, GL_AMBIENT, light_ambient);
+	glLightfv(GL_LIGHT0, GL_DIFFUSE, light_diffuse);
+	glLightfv(GL_LIGHT0, GL_SPECULAR, light_specular);
+	glLightfv(GL_LIGHT0, GL_POSITION, light_position);
+
+	glEnable(GL_COLOR_MATERIAL);
+	glEnable(GL_LIGHTING);
+	glEnable(GL_LIGHT0);
+	//glEnable(GL_DEPTH_TEST);
+	
+
+	
+
+	glutPostRedisplay();
 	glFlush();
 }
 
