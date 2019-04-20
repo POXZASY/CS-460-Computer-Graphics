@@ -16,11 +16,13 @@ float green = 0.0;
 int xloc = 45;
 int yloc = 45;
 int zloc = 45;
-float lightx = 50.0;
-float lighty = 50.0;
-float lightz = 50.0;
+float lightx = 20.0;
+float lighty = 5.0;
+float lightz = 20.0;
 bool useWireframe = true;
 bool flatLighting = true;
+float diffuseDelta = 0.1;
+float shinyVal = 51.0;
 
 struct Point {
 	float x;
@@ -33,8 +35,10 @@ void processMenu(int option) {
 	switch (option) {
 	case 1:
 		useWireframe = !useWireframe;
+		break;
 	case 2:
 		flatLighting = !flatLighting;
+		break;
 	}
 	glutPostRedisplay();
 }
@@ -169,18 +173,56 @@ void zoomMenu(int option) {
 	}
 }
 void lightMenu(int option) {
+	int lightconst = 5;
 	switch (option) {
 	case 1:
-		lighty = lighty + 5;
+		lightx = lightx + lightconst;
 		glutPostRedisplay();
 		break;
 	case 2:
-		lighty = lighty - 5;
+		lightx = lightx - lightconst;
 		glutPostRedisplay();
+		break;
+	
+	case 3:
+		lighty = lighty + lightconst;
+		glutPostRedisplay();
+		break;
+	case 4:
+		lighty = lighty - lightconst;
+		glutPostRedisplay();
+		break;
+
+	case 5:
+		lightz = lightz + lightconst;
+		glutPostRedisplay();
+		break;
+	case 6:
+		lightz = lightz - lightconst;
+		glutPostRedisplay();
+		break;
+		}
+}
+void diffuseMenu(int option) {
+	switch (option) {
+	case 1:
+		diffuseDelta += 0.1;
+		break;
+	case 2:
+		diffuseDelta -= 0.1;
 		break;
 	}
 }
-
+void specularMenu(int option) {
+	switch (option) {
+	case 1:
+		shinyVal += 25;
+		break;
+	case 2:
+		shinyVal -= 25;
+		break;
+	}
+}
 void createMenu() {
 	//Control Point 1
 	int menu1 = glutCreateMenu(cp1);
@@ -220,8 +262,18 @@ void createMenu() {
 	glutAddMenuEntry("Z-", 2);
 	//Light Shift Menu
 	int light = glutCreateMenu(lightMenu);
-	glutAddMenuEntry("Y+", 1);
-	glutAddMenuEntry("Y-", 2);
+	glutAddMenuEntry("X+", 1);
+	glutAddMenuEntry("X-", 2);
+	glutAddMenuEntry("Y+", 3);
+	glutAddMenuEntry("Y-", 4);
+	glutAddMenuEntry("Z+", 5);
+	glutAddMenuEntry("Z-", 6);
+	int diffuse = glutCreateMenu(diffuseMenu);
+	glutAddMenuEntry("+", 1);
+	glutAddMenuEntry("-", 2);
+	int specular = glutCreateMenu(specularMenu);
+	glutAddMenuEntry("+", 1);
+	glutAddMenuEntry("-", 2);
 	//Main Menu
 	int menu = glutCreateMenu(processMenu);
 	glutAddSubMenu("Control Point 1", menu1);
@@ -232,6 +284,8 @@ void createMenu() {
 	glutAddSubMenu("Light Shift", light);
 	glutAddMenuEntry("Surface", 1);
 	glutAddMenuEntry("Flat/Smooth Shading", 2);
+	glutAddSubMenu("Diffuse", diffuse);
+	glutAddSubMenu("Specular", specular);
 	glutAttachMenu(GLUT_RIGHT_BUTTON);
 }
 
@@ -311,10 +365,55 @@ bool visible(Point a, Point b, Point c) {
 	return angle < PI / 2;
 }
 
+void lightInit() {
+
+	//Lighting
+	if (flatLighting) glShadeModel(GL_FLAT);
+	else glShadeModel(GL_SMOOTH);
+
+	////////////////
+
+	//glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
+
+
+
+	GLfloat material_ambient[] = { 0.2, 0.2, 0.2, 1.0 };
+	GLfloat material_diffuse[] = { 0.7 + diffuseDelta, 0.0 + diffuseDelta, 0.7 + diffuseDelta, 1.0 };
+	GLfloat material_specular[] = { 1.0, 1.0, 1.0, 1.0 };
+	GLfloat material_shininess[] = { shinyVal };
+
+	glMaterialfv(GL_FRONT_AND_BACK, GL_SHININESS, material_shininess);
+	glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, material_ambient);
+	glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, material_diffuse);
+	glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, material_specular);
+
+	GLfloat light_ambient[] = { 0.1, 0.1, 0.1, 1.0 };
+	GLfloat light_diffuse[] = { 0.7, 0.7, 0.7, 1.0 };
+	GLfloat light_specular[] = { 0.4, 0.4, 0.4, 1.0 };
+	GLfloat light_position[] = { lightx, lighty, lightz, 1.0 };
+
+	glLightfv(GL_LIGHT0, GL_AMBIENT, light_ambient);
+	glLightfv(GL_LIGHT0, GL_DIFFUSE, light_diffuse);
+	glLightfv(GL_LIGHT0, GL_SPECULAR, light_specular);
+	glLightfv(GL_LIGHT0, GL_POSITION, light_position);
+
+	glColorMaterial(GL_FRONT_AND_BACK, GL_AMBIENT);
+	//glColorMaterial(GL_FRONT_AND_BACK, GL_SPECULAR);
+	glEnable(GL_CULL_FACE);
+	glEnable(GL_LIGHTING);
+	glEnable(GL_LIGHT0);
+	glEnable(GL_DEPTH_TEST);
+	glEnable(GL_COLOR_MATERIAL);
+
+}
 
 void display() {
 	glClearColor(red, green, blue, 0.0);
-	glClear(GL_COLOR_BUFFER_BIT);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+
+	lightInit();
+
 	glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity();
 	glEnable(GL_NORMALIZE);
@@ -380,28 +479,6 @@ void display() {
 	glEnd();
 
 	
-	//Lighting
-	if (flatLighting) glShadeModel(GL_FLAT);
-	else glShadeModel(GL_SMOOTH);
-
-	////////////////
-
-	GLfloat light_ambient[] = { 0.1, 0.1, 0.1, 1.0 };
-	GLfloat light_diffuse[] = { 0.7, 0.7, 0.7, 1.0 };
-	GLfloat light_specular[] = { 0.4, 0.4, 0.4, 1.0 };
-	GLfloat light_position[] = { lightx, lighty, lightz, 1.0 };
-
-	glLightfv(GL_LIGHT0, GL_AMBIENT, light_ambient);
-	glLightfv(GL_LIGHT0, GL_DIFFUSE, light_diffuse);
-	glLightfv(GL_LIGHT0, GL_SPECULAR, light_specular);
-	glLightfv(GL_LIGHT0, GL_POSITION, light_position);
-
-	glEnable(GL_COLOR_MATERIAL);
-	glEnable(GL_LIGHTING);
-	glEnable(GL_LIGHT0);
-	//glEnable(GL_DEPTH_TEST);
-	
-
 	
 
 	glutPostRedisplay();
@@ -412,7 +489,7 @@ int main(int argc, char** argv) {
 	glutInit(&argc, argv);
 	glutInitWindowSize(screenx, screeny);
 	glutInitWindowPosition(50, 50);
-	//glutInitDisplayMode(GLUT_DOUBLE);
+	glutInitDisplayMode(GLUT_SINGLE | GLUT_RGB | GLUT_DEPTH);
 	glutCreateWindow("Project 5");
 	glutDisplayFunc(display);
 	//glutMouseFunc(mouseHandler);
