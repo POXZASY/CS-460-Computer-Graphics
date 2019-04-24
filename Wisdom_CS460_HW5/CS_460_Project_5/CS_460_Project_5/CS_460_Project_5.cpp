@@ -24,11 +24,42 @@ bool flatLighting = true;
 float diffuseDelta = 0.1;
 float shinyVal = 51.0;
 
+//B-Spline
+bool bSplineOn = false;    
+bool mouseCurrentlyDown = false;
+int selectedPoint = -1;
+bool foundPoint = false;
+
 struct Point {
 	float x;
 	float y;
 	float z;
 };
+
+vector<Point> controlpoints;
+
+void bSplineInit() {
+	Point cp1;
+	cp1.x = 400; cp1.y = 400; cp1.z = 0;
+	Point cp2;
+	cp2.x = 100; cp2.y = 400; cp2.z = 0;
+	Point cp3;
+	cp3.x = 100; cp3.y = 250; cp3.z = 0;
+	Point cp4;
+	cp4.x = 400; cp4.y = 250; cp4.z = 0;
+	Point cp5;
+	cp5.x = 400; cp5.y = 100; cp5.z = 0;
+	Point cp6;
+	cp6.x = 100; cp6.y = 100; cp6.z = 0;
+	controlpoints.clear();
+	controlpoints.push_back(cp1);
+	controlpoints.push_back(cp2);
+	controlpoints.push_back(cp3);
+	controlpoints.push_back(cp4);
+	controlpoints.push_back(cp5);
+	controlpoints.push_back(cp6);
+}
+
 vector<vector<Point>> surface(4, vector<Point>(4));
 
 void processMenu(int option) {
@@ -38,6 +69,10 @@ void processMenu(int option) {
 		break;
 	case 2:
 		flatLighting = !flatLighting;
+		break;
+	case 3:
+		bSplineOn = !bSplineOn;
+		if (bSplineOn) bSplineInit();
 		break;
 	}
 	glutPostRedisplay();
@@ -286,6 +321,7 @@ void createMenu() {
 	glutAddMenuEntry("Flat/Smooth Shading", 2);
 	glutAddSubMenu("Diffuse", diffuse);
 	glutAddSubMenu("Specular", specular);
+	glutAddMenuEntry("B-Spline", 3);
 	glutAttachMenu(GLUT_RIGHT_BUTTON);
 }
 
@@ -407,82 +443,199 @@ void lightInit() {
 
 }
 
+float dist(Point a, Point b) {
+	return sqrt(pow(a.x - b.x, 2) + pow(a.y - b.y, 2) + pow(a.z - b.z, 2));
+}
+
+int radius = 5;
+
+void drawPoint(Point p, int numtriangles) {
+	float angleinc = (float)2 * PI / ((float)numtriangles);
+	glColor3f(0.0, 0.0, 0.0);
+	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+	glBegin(GL_TRIANGLES);
+	for (int i = 0; i < numtriangles; i++) {
+		glVertex3f(p.x + radius*cos(i*angleinc) , p.y + radius * sin(i*angleinc), 0);
+		glVertex3f(p.x + radius * cos((i+1)*angleinc), p.y + radius * sin((i+1)*angleinc), 0);
+		glVertex3f(p.x, p.y, 0);
+	}
+	glEnd();
+}
+
+//0 to 1 (parametric)
+vector<float> knotVector;
+void populateKnotVector() {
+	float inc = 1.0 / (controlpoints.size() + 4 - 1);
+	float temp = 0;
+	for (int i = 0; i <= controlpoints.size()-1 + 4; i++) { //"4" -> cubic
+		knotVector.push_back(temp);
+		temp += inc;
+	}
+}
+
+
+float bSplineBasis(int i, int j, float t) {
+	if (j == 0) {
+		if (knotVector[i] <= t && t < knotVector[i + 1]) return 1;
+		return 0;
+	}
+	return ((t - knotVector[i]) / (knotVector[i + j] - knotVector[i])) * bSplineBasis(i, j - 1, t) + ((knotVector[i + j + 1] - t) / (knotVector[i + j + 1] - knotVector[i + 1])) * bSplineBasis(i + 1, j - 1, t);
+}
+
+Point createBSplinePoint(float t) {
+	populateKnotVector();
+	Point p;
+	p.z = 0;
+	//X
+	float sumx = 0;
+	for (int i = 0; i < controlpoints.size(); i++) {
+		sumx += controlpoints[i].x * bSplineBasis(i, 3, t);
+	}
+	p.x = sumx;
+	//Y
+	float sumy = 0;
+	for (int i = 0; i < controlpoints.size(); i++) {
+		sumy += controlpoints[i].y * bSplineBasis(i, 3, t);
+	}
+	p.y = sumy;
+	return p;
+}
+
+void drawBSpline() {
+	for (Point p : controlpoints) {
+		drawPoint(p, 16);
+	}
+	glBegin(GL_LINES);
+	for (float f = 0.0; f <= 1; f+=.01) {
+		Point p1 = createBSplinePoint(f);
+		Point p2 = createBSplinePoint(f+.01);
+		glVertex2f(p1.x, p1.y);
+		glVertex2f(p2.x, p2.y);
+	}
+	glEnd();
+}
+
 void display() {
 	glClearColor(red, green, blue, 0.0);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	if (bSplineOn) {
+		glClearColor(1.0, 1.0, 1.0, 0.0);
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+		
+		glMatrixMode(GL_MODELVIEW);
+		glLoadIdentity();
+		glEnable(GL_NORMALIZE);
+
+		//0 to 500
+		glViewport(0, 0, screenx, screeny);
+		glMatrixMode(GL_PROJECTION);
+		glLoadIdentity();
+		gluPerspective(90, ((float)screenx / screeny), 0.01, 500);
+		gluLookAt(screenx/2, screeny/2, screenx/2, screenx/2, screeny/2, 0, 0, 1, 0);
+
+		drawBSpline();
+	}
+	else {
+
+		lightInit();
+
+		glMatrixMode(GL_MODELVIEW);
+		glLoadIdentity();
+		glEnable(GL_NORMALIZE);
+
+		glViewport(0, 0, screenx, screeny);
+		glMatrixMode(GL_PROJECTION);
+		glLoadIdentity();
+		gluPerspective(60, ((float)screenx / screeny), 0.01, 500);
+		gluLookAt(xloc, yloc, zloc, 0, 0, 0, 0, 1, 0);
 
 
-	lightInit();
 
-	glMatrixMode(GL_MODELVIEW);
-	glLoadIdentity();
-	glEnable(GL_NORMALIZE);
+		//Axes
+		glBegin(GL_LINES);
+		//Red x-axis
+		glColor3f(1.0, 0.0, 0.0);
+		glVertex3f(-100.0, 0.0, 0.0);
+		glVertex3f(100.0, 0.0, 0.0);
+		//Blue y-axis
+		glColor3f(0.0, 0.0, 1.0);
+		glVertex3f(0.0, -100.0, 0.0);
+		glVertex3f(0.0, 100.0, 0.0);
+		//Green z-axis
+		glColor3f(0.0, 1.0, 0.0);
+		glVertex3f(0.0, 0.0, -100.0);
+		glVertex3f(0.0, 0.0, 100.0);
+		glEnd();
 
-	glViewport(0, 0, screenx, screeny);
-	glMatrixMode(GL_PROJECTION);
-	glLoadIdentity();
-	gluPerspective(60, ((float)screenx / screeny), 0.01, 500);
-	gluLookAt(xloc, yloc, zloc, 0, 0, 0, 0, 1, 0);
-	
-	
 
-	//Axes
-	glBegin(GL_LINES);
-	//Red x-axis
-	glColor3f(1.0, 0.0, 0.0);
-	glVertex3f(-100.0, 0.0, 0.0);
-	glVertex3f(100.0, 0.0, 0.0);
-	//Blue y-axis
-	glColor3f(0.0, 0.0, 1.0);
-	glVertex3f(0.0, -100.0, 0.0);
-	glVertex3f(0.0, 100.0, 0.0);
-	//Green z-axis
-	glColor3f(0.0, 1.0, 0.0);
-	glVertex3f(0.0, 0.0, -100.0);
-	glVertex3f(0.0, 0.0, 100.0);
-	glEnd();
+		//Bezier Patch
 
-	
-	//Bezier Patch
-	
-	if(useWireframe) glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-	else glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-	
-	glBegin(GL_TRIANGLES);
-	glColor3f(1.0, 0.0, 1.0);
-	for (float u = 0; u < 1; u = u + .05) {
-		for (float v = 0; v < 1; v = v + .05) {
-			Point p1 = Q(u, v);
-			Point p2 = Q(u, v + .05);
-			Point p3 = Q(u + .05, v + .05);
-			Point p4 = Q(u + .05, v);
-			if (visible(p1, p2, p4)) {
-				Point norm = normalVec(p1, p2, p4);
-				glNormal3f(norm.x, norm.y, norm.z);
-				glVertex3f(p1.x, p1.y, p1.z);
-				glNormal3f(norm.x, norm.y, norm.z);
-				glVertex3f(p2.x, p2.y, p2.z);
-				glNormal3f(norm.x, norm.y, norm.z);
-				glVertex3f(p4.x, p4.y, p4.z);
-			}
-			if (visible(p2, p3, p4)) {
-				Point norm = normalVec(p2, p3, p4);
-				glNormal3f(norm.x, norm.y, norm.z);
-				glVertex3f(p2.x, p2.y, p2.z);
-				glNormal3f(norm.x, norm.y, norm.z);
-				glVertex3f(p3.x, p3.y, p3.z);
-				glNormal3f(norm.x, norm.y, norm.z);
-				glVertex3f(p4.x, p4.y, p4.z);
+		if (useWireframe) glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+		else glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+
+		glBegin(GL_TRIANGLES);
+		glColor3f(1.0, 0.0, 1.0);
+		for (float u = 0; u < 1; u = u + .05) {
+			for (float v = 0; v < 1; v = v + .05) {
+				Point p1 = Q(u, v);
+				Point p2 = Q(u, v + .05);
+				Point p3 = Q(u + .05, v + .05);
+				Point p4 = Q(u + .05, v);
+				if (visible(p1, p2, p4)) {
+					Point norm = normalVec(p1, p2, p4);
+					glNormal3f(norm.x, norm.y, norm.z);
+					glVertex3f(p1.x, p1.y, p1.z);
+					glNormal3f(norm.x, norm.y, norm.z);
+					glVertex3f(p2.x, p2.y, p2.z);
+					glNormal3f(norm.x, norm.y, norm.z);
+					glVertex3f(p4.x, p4.y, p4.z);
+				}
+				if (visible(p2, p3, p4)) {
+					Point norm = normalVec(p2, p3, p4);
+					glNormal3f(norm.x, norm.y, norm.z);
+					glVertex3f(p2.x, p2.y, p2.z);
+					glNormal3f(norm.x, norm.y, norm.z);
+					glVertex3f(p3.x, p3.y, p3.z);
+					glNormal3f(norm.x, norm.y, norm.z);
+					glVertex3f(p4.x, p4.y, p4.z);
+				}
 			}
 		}
+		glEnd();
 	}
-	glEnd();
-
 	
-	
-
 	glutPostRedisplay();
 	glFlush();
+}
+
+void mouseHandler(int button, int state, int x, int y) {
+	if (button == GLUT_LEFT_BUTTON && state == GLUT_DOWN) {
+		if (!mouseCurrentlyDown) {
+			Point temp;
+			temp.x = x;
+			temp.y = screeny-y;
+			temp.z = 0;
+			for (int i = 0; i < controlpoints.size(); i++) {
+				if (dist(temp, controlpoints[i]) <= radius) {
+					selectedPoint = i + 1;
+					foundPoint = true;
+					break;
+				}
+			}
+			mouseCurrentlyDown = true;
+		}
+	}
+	if (button == GLUT_LEFT_BUTTON && state == GLUT_UP) {
+		mouseCurrentlyDown = false;
+		foundPoint = false;
+	}
+}
+
+void mousePos(int x, int y) {
+	if (mouseCurrentlyDown && foundPoint) {
+		controlpoints[selectedPoint - 1].x=x;
+		controlpoints[selectedPoint - 1].y=screeny-y;
+	}
 }
 
 int main(int argc, char** argv) {
@@ -492,6 +645,8 @@ int main(int argc, char** argv) {
 	glutInitDisplayMode(GLUT_SINGLE | GLUT_RGB | GLUT_DEPTH);
 	glutCreateWindow("Project 5");
 	glutDisplayFunc(display);
+	glutMouseFunc(mouseHandler);
+	glutMotionFunc(mousePos);
 	//glutMouseFunc(mouseHandler);
 	//glutKeyboardFunc(keyboardHandler);
 	createMenu();
