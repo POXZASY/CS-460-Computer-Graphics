@@ -5,7 +5,7 @@ c:\users\larkin\documents\cs_460\wisdom_cs460_hw5\cs_460_project_5\cs_460_projec
 c:\users\larkin\documents\cs_460\wisdom_cs460_hw5\cs_460_project_5\cs_460_project_5\cs_460_project_5.cpp(497): warning C4018: '<': signed/unsigned mismatch
 c:\users\larkin\documents\cs_460\wisdom_cs460_hw5\cs_460_project_5\cs_460_project_5\cs_460_project_5.cpp(619): warning C4018: '<': signed/unsigned mismatch
   Generating code
-  0 of 247 functions ( 0.0%) were compiled, the rest were copied from previous compilation.
+  2 of 247 functions ( 0.8%) were compiled, the rest were copied from previous compilation.
     0 functions were new in current compilation
     0 functions had inline decision re-evaluated but remain unchanged
   Finished generating code
