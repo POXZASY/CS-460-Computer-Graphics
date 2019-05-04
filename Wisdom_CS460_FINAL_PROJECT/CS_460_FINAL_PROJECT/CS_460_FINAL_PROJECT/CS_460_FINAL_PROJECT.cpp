@@ -12,14 +12,14 @@ using namespace std;
 #define pi 3.14159265358979323846264338327950288419716939937510
 #define e 2.7182818284590452353602874713527
 #define g 9.81
-#define V 10 //windspeed in m/s
+#define V 5 //windspeed in m/s
 
 int screenx = 500;
 int screeny = 500;
 float red = 1.0;
 float green = 1.0;
 float blue = 1.0;
-int randinc = time(NULL);
+float randinc = time(NULL);
 
 
 //Implementation of http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.161.9102&rep=rep1&type=pdf
@@ -61,8 +61,6 @@ complex conjugate(complex c) {
 	return c;
 }
 
-
-
 float vecMag(pair<float, float> v) {
 	return sqrt(pow(v.first, 2) + pow(v.second, 2));
 }
@@ -75,17 +73,15 @@ pair<float, float> vecNorm(pair<float, float> v) {
 	return retVal;
 }
 
-float A = 1; //arbitrary "global wave ampliltude"
+float A = .001; //arbitrary "global wave ampliltude"
 float L = pow(V, 2)/g;
 pair<float, float> w_hat = make_pair(1, 0); //wind going in positive x direction
 
 float phillipsSpectrum(pair<float, float> k) {
-	float small = .001;
-	if (k.first == 0 && k.second == 0) {
-		cout << A * pow(e, -1 / pow(small*L, 2)) / pow(small, 4) * pow(abs(vecNorm(k).first * w_hat.first + vecNorm(k).second * w_hat.second), 2) << endl;
-		return A * pow(e, -1 / pow(small*L, 2)) / pow(small, 4) * pow(abs(vecNorm(k).first * w_hat.first + vecNorm(k).second * w_hat.second), 2); //handle divide by zero errors
-	}
-	return A * pow(e, -1/pow(vecMag(k)*L, 2))/pow(vecMag(k),4) * pow(abs(vecNorm(k).first * w_hat.first + vecNorm(k).second * w_hat.second), 2);
+	float l = .01;
+	float small = .0001;
+	if (k.first == 0 && k.second == 0) return A * pow(e, -1 / pow(small*L, 2)) / pow(small, 4) * pow(abs(k.first * w_hat.first + k.second * w_hat.second), 2) * pow(e, -small*small*l*l); //handle divide by zero errors
+	return A * pow(e, -1/pow(vecMag(k)*L, 2))/pow(vecMag(k),4) * pow(abs(k.first * w_hat.first + k.second * w_hat.second), 2)* pow(e, -pow(vecMag(k), 2) *l*l);
 }
 
 //Equation 25
@@ -139,33 +135,39 @@ struct Point {
 	float z;
 };
 
-vector<Point> wavepoints;
+
 float timeval = 123;
-int dist = 5;
+int dist = 100;
+vector<Point> tempvec(dist);
+vector<vector<Point>> wavepoints(dist, tempvec);
 
 //for testing
 void flatWave() {
-	for (int i = -dist; i <= dist; i++) {
-		for (int j = -dist; j <= dist; j++) {
-			Point q;
-			q.x = i;
-			q.y = 0;
-			q.z = j;
-			wavepoints.push_back(q);
+	wavepoints.empty();
+	for (int i = 0; i < dist; i++) {
+		for (int j = 0; j < dist; j++) {
+			Point p;
+			p.x = i;
+			p.y = 0;
+			p.z = j;
+			//cout << "x: " << p.x << "y: " << p.y << "z: " << p.z << endl;
+			wavepoints[i][j] = p;
 		}
 	}
 }
 
 void drawWave() {
-	for (int i = -dist; i <= dist; i++) {
-		for (int j = -dist; j <= dist; j++) {
+	wavepoints.empty();
+	for (int i = 0; i < dist; i++) {
+		for (int j = 0; j < dist; j++) {
 			Point p;
 			p.x = i;
 			p.y = height(make_pair(i, j), timeval);
 			p.z = j;
-			cout << "x: " << p.x << "y: " << p.y << "z: " << p.z << endl;
-			wavepoints.push_back(p);
+			//cout << "x: " << p.x << "y: " << p.y << "z: " << p.z << endl;
+			wavepoints[i][j] = p;
 		}
+		cout << "x: " << i <<endl;
 	}
 }
 
@@ -174,29 +176,42 @@ void display() {
 	glClearColor(red, green, blue, 0.0);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-	
-
 	glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity();
 
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
 	gluPerspective(60, ((float)screenx / screeny), 0.01, 500); //60 deg prob not best FOV
-	gluLookAt(0, dist/3, dist, 0, 0, 0, 0, 1, 0);
+	gluLookAt(dist/2, dist/2, 0, dist/2, 0, dist/2, 0, 1, 0);
 
-	glColor3f(0.0, 0.0, 0.0);
+	
 	
 	//flatWave();
 	drawWave();
 	
 	//Displays wavepoints
-	glBegin(GL_POINTS);
-	for (int i = 0; i < wavepoints.size(); i++) {
-		Point p = wavepoints[i];
-		glVertex3f(p.x, p.y, p.z);
+	glColor3f(0.0, 0.0, 1.0);
+	glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+	for (int x = 0; x < dist-1; x++) {
+		for (int z = 0; z < dist-1; z++) {
+			Point p1 = wavepoints[x][z];
+			Point p2 = wavepoints[x][z+1];
+			Point p3 = wavepoints[x+1][z+1];
+			Point p4 = wavepoints[x+1][z];
+			glBegin(GL_TRIANGLES);
+			glVertex3f(p1.x, p1.y, p1.z);
+			glVertex3f(p2.x, p2.y, p2.z);
+			glVertex3f(p4.x, p4.y, p4.z);
+			glVertex3f(p2.x, p2.y, p2.z);
+			glVertex3f(p3.x, p3.y, p3.z);
+			glVertex3f(p4.x, p4.y, p4.z);
+			glEnd();
+		}
 	}
-	glEnd();
+	
 	glutPostRedisplay();
+
+	timeval=timeval+.1;
 
 	glFlush();
 }
