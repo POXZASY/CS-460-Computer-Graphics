@@ -16,10 +16,16 @@ using namespace std;
 
 int screenx = 500;
 int screeny = 500;
-float red = 1.0;
-float green = 1.0;
-float blue = 1.0;
+float atmosred = (float)135/255;
+float atmosgreen = (float)206/255;
+float atmosblue = (float)235/255;
 float randinc = time(NULL);
+
+float timeval = 123;
+int dist = 100;
+int N = 64;
+int M = 64;
+float A = .0005; //arbitrary "global wave ampliltude"
 
 
 //Implementation of http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.161.9102&rep=rep1&type=pdf
@@ -73,7 +79,7 @@ pair<float, float> vecNorm(pair<float, float> v) {
 	return retVal;
 }
 
-float A = .001; //arbitrary "global wave ampliltude"
+
 float L = pow(V, 2)/g;
 pair<float, float> w_hat = make_pair(1, 0); //wind going in positive x direction
 
@@ -111,8 +117,6 @@ complex height_fourier(pair<float, float> k, float t) {
 //Equation 19: "The fft-based representation of a wave height field expresses the wave heighth(x,t) at the horizontal position x= (x,z) as the sum of sinusoids with complex, time-dependent amplitudes"
 float height(pair <float, float> x, float t) {
 	pair<float, float> L = make_pair(200, 200);
-	int N = 128;
-	int M = 128;
 	complex sum;
 	sum.real = 0;
 	sum.img = 0;
@@ -129,15 +133,35 @@ float height(pair <float, float> x, float t) {
 	return sum.real; //complex part should be 0
 }
 
+struct Color {
+	Color operator +(Color c){
+		Color temp;
+		temp.red = (red + c.red) / 2;
+		temp.green = (green + c.green) / 2;
+		temp.blue = (blue + c.blue) / 2;
+		return temp;
+	}
+	Color operator *(float f) {
+		Color temp;
+		temp.red = red * f;
+		temp.green = green * f;
+		temp.blue = blue * f;
+		return temp;
+	}
+	float red;
+	float green;
+	float blue;
+};
+
 struct Point {
+	Color c;
 	float x;
 	float y;
 	float z;
 };
 
 
-float timeval = 123;
-int dist = 100;
+
 vector<Point> tempvec(dist);
 vector<vector<Point>> wavepoints(dist, tempvec);
 
@@ -171,9 +195,48 @@ void drawWave() {
 	}
 }
 
+Color lightSun(Point p) {
+	Color temp;
+	temp.red = 1.0;
+	temp.green = 1.0;
+	temp.blue = 1.0;
+	return temp;
+}
+
+Color lightAtmosphere(Point p) {
+	//depends only on the sun
+	Color temp;
+	temp.red = atmosred;
+	temp.green = atmosgreen;
+	temp.blue = atmosblue;
+	return temp;
+}
+
+Color lightUnder(Point p) {
+	//emperical result
+	Color temp;
+	temp.red = 0.0;
+	temp.green = 0.0;
+	temp.blue = 0.0;
+	return temp;
+}
+
+Color lightAbove(Point p){
+	float r = 1;
+	float t_u = 0;
+	return lightSun(p)*r + lightAtmosphere(p)*r + lightUnder(p)*t_u;
+}
+
+void doRadiosity() {
+	for (int i = 0; i < dist; i++) {
+		for (int j = 0; j < dist; j++) {
+			wavepoints[i][j].c = lightAbove(wavepoints[i][j]);
+		}
+	}
+}
 
 void display() {
-	glClearColor(red, green, blue, 0.0);
+	glClearColor(atmosred, atmosgreen, atmosblue, 0.0);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 	glMatrixMode(GL_MODELVIEW);
@@ -182,22 +245,26 @@ void display() {
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
 	gluPerspective(60, ((float)screenx / screeny), 0.01, 500); //60 deg prob not best FOV
-	gluLookAt(dist/2, dist/2, 0, dist/2, 0, dist/2, 0, 1, 0);
+	gluLookAt(dist/2, 10, 0, dist/2, 0, dist/2, 0, 1, 0);
 
 	
 	
 	//flatWave();
 	drawWave();
+	doRadiosity();
 	
 	//Displays wavepoints
-	glColor3f(0.0, 0.0, 1.0);
-	glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 	for (int x = 0; x < dist-1; x++) {
 		for (int z = 0; z < dist-1; z++) {
 			Point p1 = wavepoints[x][z];
 			Point p2 = wavepoints[x][z+1];
 			Point p3 = wavepoints[x+1][z+1];
 			Point p4 = wavepoints[x+1][z];
+			float redval = (p1.c.red + p2.c.red + p3.c.red + p4.c.red) / 4;
+			float greenval = (p1.c.green + p2.c.green + p3.c.green + p4.c.green) / 4;
+			float blueval = (p1.c.blue + p2.c.blue + p3.c.blue + p4.c.blue) / 4;
+			glColor3f(redval, greenval, blueval);
 			glBegin(GL_TRIANGLES);
 			glVertex3f(p1.x, p1.y, p1.z);
 			glVertex3f(p2.x, p2.y, p2.z);
