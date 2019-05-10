@@ -22,10 +22,13 @@ float atmosblue = (float)235/255;
 float randinc = time(NULL);
 
 float timeval = 123;
-int dist = 100;
+
 int N = 64;
 int M = 64;
-float A = .0005; //arbitrary "global wave ampliltude"
+int dist = N;
+float A = .01; //arbitrary "global wave ampliltude"
+pair<float, float> L = make_pair(1000, 1000);
+
 
 
 //Implementation of http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.161.9102&rep=rep1&type=pdf
@@ -62,6 +65,7 @@ struct complex {
 	}
 };
 
+
 complex conjugate(complex c) {
 	c.img = -c.img;
 	return c;
@@ -80,46 +84,100 @@ pair<float, float> vecNorm(pair<float, float> v) {
 }
 
 
-float L = pow(V, 2)/g;
+float Lval = pow(V, 2)/g;
+
+
 pair<float, float> w_hat = make_pair(1, 0); //wind going in positive x direction
 
-float phillipsSpectrum(pair<float, float> k) {
+complex T(float x) {
+	complex c;
+	c.real = cos(2*pi*x/N);
+	c.img = sin(2 * pi*x / N);
+	return c;
+}
+
+float phillipsSpectrum(float n, float m) {
+	pair<float, float> k = make_pair(n, m);
 	float l = .01;
 	float small = .0001;
-	if (k.first == 0 && k.second == 0) return A * pow(e, -1 / pow(small*L, 2)) / pow(small, 4) * pow(abs(k.first * w_hat.first + k.second * w_hat.second), 2) * pow(e, -small*small*l*l); //handle divide by zero errors
-	return A * pow(e, -1/pow(vecMag(k)*L, 2))/pow(vecMag(k),4) * pow(abs(k.first * w_hat.first + k.second * w_hat.second), 2)* pow(e, -pow(vecMag(k), 2) *l*l);
+	if (k.first == 0 && k.second == 0) return A * pow(e, -1 / pow(small*Lval, 2)) / pow(small, 4) * pow(abs(k.first * w_hat.first + k.second * w_hat.second), 2) * pow(e, -small*small*l*l); //handle divide by zero errors
+	return A * pow(e, -1/pow(vecMag(k)*Lval, 2))/pow(vecMag(k),4) * pow(abs(k.first * w_hat.first + k.second * w_hat.second), 2)* pow(e, -pow(vecMag(k), 2) *l*l);
 }
 
 //Equation 25
-complex height0_fourier(pair<float, float> k) {
+complex height0_fourier(float n, float m) {
 	complex c;
 	c.real = normal();
 	c.img = normal();
-	return c * (1 / sqrt(2)) * sqrt(phillipsSpectrum(k));
+	return c * (1 / sqrt(2)) * sqrt(phillipsSpectrum(n, m));
 }
 
 //Dispersion relation
-float w(float k) {
-	return sqrt(g * k);
+float w(float n, float m) {
+	return sqrt(g * sqrt(pow((2*pi*n - pi*N)/L.first, 2)+pow((2*pi*m - pi*M)/L.second, 2)));
 }
 
 //Equation 26: "height amplitude Fourier component"
-complex height_fourier(pair<float, float> k, float t) {
+complex height_fourier(float n, float m, float t) {
 	complex c1;
-	c1.real = cos(w(vecMag(k))*t);
-	c1.img = sin(w(vecMag(k))*t);
+	c1.real = cos(w(n, m)*t);
+	c1.img = sin(w(n, m)*t);
 	complex c2;
-	c2.real = cos(-w(vecMag(k))*t);
-	c2.img = sin(-w(vecMag(k))*t);
-	pair<float, float> kneg = make_pair(-k.first, -k.second);
-	return height0_fourier(k)*c1 + conjugate(height0_fourier(kneg))*c2;
+	c2.real = cos(-w(n, m)*t);
+	c2.img = sin(-w(n, m)*t);
+	return height0_fourier(n, m)*c1 + conjugate(height0_fourier(-n, -m))*c2;
 }
+
+vector<pair<complex, complex>> heightvals;
+
+complex height_3p(float x, float m, float t) {
+	if (x >= 0) { //second cycle
+		pair<complex, complex> temp = heightvals[x];
+		return temp.first + temp.second*-1;
+	}
+	complex sum1;
+	complex sum2;
+	sum1.real = 0;
+	sum1.img = 0;
+	sum2.real = 0;
+	sum2.img = 0;
+	for (int n = 0; n < N / 2; n++) {
+		complex exp;
+		exp.real = cos(2 * pi*n*x / (N / 2));
+		exp.img = sin(2 * pi*n*x / (N / 2));
+		sum1 = sum1 + exp * height_fourier(2 * n, m, t);
+	}
+	complex twiddle = T(x);
+	for (int n = 0; n < N / 2; n++) {
+		complex exp;
+		exp.real = cos(2 * pi*n*x / (N / 2));
+		exp.img = sin(2 * pi*n*x / (N / 2));
+		sum2 = sum2 + twiddle * exp * height_fourier(2 * n + 1, m, t);
+	}
+	heightvals.push_back(make_pair(sum1, sum2));
+	return sum1+sum2;
+}
+
 //Equation 19: "The fft-based representation of a wave height field expresses the wave heighth(x,t) at the horizontal position x= (x,z) as the sum of sinusoids with complex, time-dependent amplitudes"
-float height(pair <float, float> x, float t) {
-	pair<float, float> L = make_pair(200, 200);
+float height(pair <float, float> xvec, float t) {
+	float x = xvec.first;
+	float z = xvec.second;
+
 	complex sum;
 	sum.real = 0;
 	sum.img = 0;
+	
+	for (int m = 0; m < M; m++) {
+		complex exp;
+		exp.real = cos(z*(2*pi*m-pi*M) / L.second);
+		exp.img = sin(z*(2 * pi*m - pi * M) / L.second);
+		complex part2 = height_3p(x, m, t);
+		sum = sum + exp * part2;
+	}
+
+	return sum.real; //complex part should be 0
+
+	/*
 	for (int n = -N / 2; n < N / 2; n++) {
 		for (int m = -M / 2; m < M / 2; m++) {
 			pair<float, float> k = make_pair(2 * pi*n / L.first, 2 * pi*m / L.second);
@@ -130,8 +188,9 @@ float height(pair <float, float> x, float t) {
 		}
 		//cout << "n: " << n << " m: " << " sum: " <<sum.real << endl;
 	}
-	return sum.real; //complex part should be 0
+	*/
 }
+
 
 struct Color {
 	Color operator +(Color c){
@@ -182,12 +241,12 @@ void flatWave() {
 
 void drawWave() {
 	wavepoints.empty();
-	for (int i = 0; i < dist; i++) {
-		for (int j = 0; j < dist; j++) {
+	for (int i = 0; i < N; i++) {
+		for (int j = 0; j < M; j++) {
 			Point p;
-			p.x = i;
-			p.y = height(make_pair(i, j), timeval);
-			p.z = j;
+			p.x = i - (N/2);
+			p.y = height(make_pair(i-(N/2), j-(N/2)), timeval);
+			p.z = j - (M/2);
 			//cout << "x: " << p.x << "y: " << p.y << "z: " << p.z << endl;
 			wavepoints[i][j] = p;
 		}
@@ -236,6 +295,7 @@ void doRadiosity() {
 }
 
 void display() {
+	
 	glClearColor(atmosred, atmosgreen, atmosblue, 0.0);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
@@ -245,16 +305,18 @@ void display() {
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
 	gluPerspective(60, ((float)screenx / screeny), 0.01, 500); //60 deg prob not best FOV
-	gluLookAt(dist/2, 10, 0, dist/2, 0, dist/2, 0, 1, 0);
+	gluLookAt(dist/2, 10, 0, 0, 0, 0, 0, 1, 0);
 
 	
 	
 	//flatWave();
 	drawWave();
-	doRadiosity();
+	//doRadiosity();
 	
+
 	//Displays wavepoints
-	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+	heightvals.clear();
+	glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 	for (int x = 0; x < dist-1; x++) {
 		for (int z = 0; z < dist-1; z++) {
 			Point p1 = wavepoints[x][z];
@@ -264,7 +326,8 @@ void display() {
 			float redval = (p1.c.red + p2.c.red + p3.c.red + p4.c.red) / 4;
 			float greenval = (p1.c.green + p2.c.green + p3.c.green + p4.c.green) / 4;
 			float blueval = (p1.c.blue + p2.c.blue + p3.c.blue + p4.c.blue) / 4;
-			glColor3f(redval, greenval, blueval);
+			//glColor3f(redval, greenval, blueval);
+			glColor3f(0, 0, 0);
 			glBegin(GL_TRIANGLES);
 			glVertex3f(p1.x, p1.y, p1.z);
 			glVertex3f(p2.x, p2.y, p2.z);
