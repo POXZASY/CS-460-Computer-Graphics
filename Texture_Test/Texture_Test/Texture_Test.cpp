@@ -23,9 +23,9 @@ float randinc = time(NULL);
 
 float timeval = 123;
 int dist = 100;
-int N = 128;
-int M = 128;
-float A = .0001; //arbitrary "global wave ampliltude"
+int N = 16;
+int M = 16;
+float A = .01; //arbitrary "global wave ampliltude"
 float density = 1;
 
 
@@ -242,8 +242,8 @@ Color lightAbove(Point p) {
 
 
 void display() {
-	glClearColor(atmosred, atmosgreen, atmosblue, 0.0);
-	//glClearColor(0, 0, 0, 0);
+	//glClearColor(atmosred, atmosgreen, atmosblue, 0.0);
+	glClearColor(0, 0, 0, 0);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 	glMatrixMode(GL_MODELVIEW);
@@ -272,7 +272,7 @@ void display() {
 
 
 	//Displays wavepoints
-	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+	glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 	for (int x = 0; x < dist*density - 1; x++) {
 		for (int z = 0; z < dist*density - 1; z++) {
 			Point p1 = wavepoints[x][z];
@@ -287,12 +287,13 @@ void display() {
 			float angVal2 = pow(angleCoeff(p2, p3, p4), 2);
 			
 			// 	(29,162,216)
+			glColor3f(0, 0, 1);
 			glBegin(GL_TRIANGLES);
-			glColor3f(angVal1*(29.0/255), angVal1*(162.0/255), angVal1*(216.0/255));
+			//glColor3f(angVal1*(29.0/255), angVal1*(162.0/255), angVal1*(216.0/255));
 			glVertex3f(p1.x, p1.y, p1.z);
 			glVertex3f(p2.x, p2.y, p2.z);
 			glVertex3f(p4.x, p4.y, p4.z);
-			glColor3f(angVal2*(29.0 / 255), angVal2*(162.0 / 255), angVal2*(216.0/255));
+			//glColor3f(angVal2*(29.0 / 255), angVal2*(162.0 / 255), angVal2*(216.0/255));
 			glVertex3f(p2.x, p2.y, p2.z);
 			glVertex3f(p3.x, p3.y, p3.z);
 			glVertex3f(p4.x, p4.y, p4.z);
